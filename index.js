@@ -102,8 +102,8 @@ function buildCommands() {
             sub.setName('sell')
                .setDescription('Sell an item from your inventory')
                .addStringOption(o =>
-                   o.setName('item')
-                    .setDescription('Name of the item to sell')
+                   o.setName('id')
+                    .setDescription('ID of the item to sell (from /case inventory)')
                     .setRequired(true)
                )
         )
@@ -1112,15 +1112,15 @@ client.on('interactionCreate', async interaction => {
         }
 
         if (subcommand === 'sell') {
-            const itemName = interaction.options.getString('item');
+            const itemId = interaction.options.getString('id');
             const userInv = inventory[interaction.guildId][interaction.user.id];
             
-            // Find item case-insensitively
-            const itemIndex = userInv.findIndex(i => i.name.toLowerCase() === itemName.toLowerCase());
+            // Find item by ID
+            const itemIndex = userInv.findIndex(i => i.id === itemId);
             
             if (itemIndex === -1) {
                 return interaction.reply({ 
-                    content: `Item "${itemName}" not found in your inventory. Use /case inventory to see your items.`,
+                    content: `Item "${itemId}" not found in your inventory. Use /case inventory to see your items.`,
                     ephemeral: true 
                 });
             }
