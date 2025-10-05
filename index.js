@@ -129,7 +129,7 @@ function buildCommands() {
                .setDescription('List an item for sale')
                .addStringOption(o =>
                    o.setName('item')
-                    .setDescription('Name of the item to sell')
+                    .setDescription('ID of the item to sell (use /case inventory to find item IDs)')
                     .setRequired(true)
                )
                .addIntegerOption(o =>
