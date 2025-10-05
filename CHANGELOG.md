@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [1.1.2] - 2025-10-05
+- Updated item ID system to use readable IDs (e.g., "panda-red-123") for easier mobile use
+- Added script to migrate existing IDs to the new readable format
 - Fixed /case sell command to use item IDs instead of names
 - Added complete global market system implementation:
   - /market list: List items for sale globally

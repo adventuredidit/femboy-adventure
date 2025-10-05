@@ -7,6 +7,7 @@
     "start": "node server.js & node index.js",
     "validate-gifs": "node scripts/validate-gifs.js",
     "download-gifs": "node scripts/download-gifs.js",
+    "update-ids": "node scripts/update-to-readable-ids.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -1,4 +1,5 @@
 const messageHistories = new Map();
+const { generateReadableId } = require('./utils/id-generator');
 // If using Node < 18, uncomment the next line:
 // const fetch = require('node-fetch');
 // ...existing code...
@@ -425,9 +426,7 @@ function loadDaily() { try { if (!fs.existsSync(DAILY_FILE)) return {}; return J
 function saveDaily(data) { try { fs.writeFileSync(DAILY_FILE, JSON.stringify(data, null, 2)); } catch (e) { console.error('Failed to save daily:', e); } }
 
 // Generate a unique ID for market listings
-function generateItemId() {
-    return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
+const generateItemId = generateReadableId;
 
 let gifs = loadGifs();
 let market = loadMarket();
