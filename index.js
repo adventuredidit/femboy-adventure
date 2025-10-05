@@ -68,7 +68,68 @@ function buildCommands() {
                     .setDescription('Page number to view')
                     .setRequired(false)
                )
+        )
+        .addSubcommand(sub =>
+            sub.setName('stats')
+               .setDescription('View your case opening statistics')
         );
+
+    const marketCommand = new SlashCommandBuilder()
+        .setName('market')
+        .setDescription('CS:GO skin marketplace')
+        .addSubcommand(sub =>
+            sub.setName('list')
+               .setDescription('List an item for sale')
+               .addStringOption(o =>
+                   o.setName('item')
+                    .setDescription('Name of the item to sell')
+                    .setRequired(true)
+               )
+               .addIntegerOption(o =>
+                   o.setName('price')
+                    .setDescription('Price in coins')
+                    .setRequired(true)
+               )
+        )
+        .addSubcommand(sub =>
+            sub.setName('buy')
+               .setDescription('Buy an item from the market')
+               .addStringOption(o =>
+                   o.setName('id')
+                    .setDescription('ID of the listing to buy')
+                    .setRequired(true)
+               )
+        )
+        .addSubcommand(sub =>
+            sub.setName('search')
+               .setDescription('Search market listings')
+               .addStringOption(o =>
+                   o.setName('query')
+                    .setDescription('Search by name, rarity, or wear')
+                    .setRequired(true)
+               )
+        )
+        .addSubcommand(sub =>
+            sub.setName('listings')
+               .setDescription('View your active market listings')
+        )
+        .addSubcommand(sub =>
+            sub.setName('remove')
+               .setDescription('Remove your listing from the market')
+               .addStringOption(o =>
+                   o.setName('id')
+                    .setDescription('ID of the listing to remove')
+                    .setRequired(true)
+               )
+        );
+
+    const dailyCommand = new SlashCommandBuilder()
+        .setName('daily')
+        .setDescription('Claim your daily reward');
+
+    const streakCommand = new SlashCommandBuilder()
+        .setName('streak')
+        .setDescription('Check your daily reward streak');
     cmds.push(caseCommand);
     cmds.push(new SlashCommandBuilder().setName('dice').setDescription('Roll a 6-sided die!'));
     
@@ -304,8 +365,23 @@ function saveTrivia(d) { try { fs.writeFileSync(TRIVIA_FILE, JSON.stringify(d, n
 let triviaScores = loadTrivia();
 // Load GIFs config
 const GIFS_FILE = path.join(__dirname, 'data', 'gifs.json');
+const MARKET_FILE = path.join(__dirname, 'data', 'market.json');
+const DAILY_FILE = path.join(__dirname, 'data', 'daily.json');
+
 function loadGifs() { try { if (!fs.existsSync(GIFS_FILE)) return {}; return JSON.parse(fs.readFileSync(GIFS_FILE, 'utf8') || '{}'); } catch (e) { console.error('Failed to load gifs:', e); return {}; } }
+function loadMarket() { try { if (!fs.existsSync(MARKET_FILE)) return {}; return JSON.parse(fs.readFileSync(MARKET_FILE, 'utf8') || '{}'); } catch (e) { console.error('Failed to load market:', e); return {}; } }
+function saveMarket(data) { try { fs.writeFileSync(MARKET_FILE, JSON.stringify(data, null, 2)); } catch (e) { console.error('Failed to save market:', e); } }
+function loadDaily() { try { if (!fs.existsSync(DAILY_FILE)) return {}; return JSON.parse(fs.readFileSync(DAILY_FILE, 'utf8') || '{}'); } catch (e) { console.error('Failed to load daily:', e); return {}; } }
+function saveDaily(data) { try { fs.writeFileSync(DAILY_FILE, JSON.stringify(data, null, 2)); } catch (e) { console.error('Failed to save daily:', e); } }
+
+// Generate a unique ID for market listings
+function generateItemId() {
+    return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 let gifs = loadGifs();
+let market = loadMarket();
+let daily = loadDaily();
 if (!gifs) {
     console.error('Failed to load gifs.json, initializing with defaults');
     gifs = { cases: {}, hug: [], slap: [], ship: {} };
@@ -489,9 +565,11 @@ function selectRandomItem(items) {
     
     return {
         ...item,
+        id: generateItemId(),
         rarity: selected.rarity,
         wear,
-        value
+        value,
+        obtained: new Date().toISOString()
     };
 }
 
@@ -519,6 +597,34 @@ let inventory = loadInventory();
 const lastPlayed = {}; // key: userId, value: timestamp
 // Handle slash commands
 client.on('interactionCreate', async interaction => {
+    // Cute emoticons and phrases for all bot responses
+    const cuteEmoticons = [
+        '(｡♡‿♡｡)', '(◕‿◕✿)', '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧', '(づ｡◕‿‿◕｡)づ',
+        '(ﾉ´ヮ`)ﾉ*: ･ﾟ', '(◠‿◠✿)', '╰(◡‿◡✿╰)', '(｡◕‿◕｡)',
+        '(◕ᴗ◕✿)', '(｡♥‿♥｡)', '(ﾉ≧∀≦)ﾉ', '(◍•ᴗ•◍)❤'
+    ];
+    const cutePhrases = [
+        'uwu~', 'nya~', 'hehe~', '✧˖°', 'rawr~', 
+        '*nuzzles*', '*wiggles*', 'owo~', 'teehee~',
+        '*blushes*', '*headpats*', '*purrs*', 'nyaa~'
+    ];
+    const getRandomCute = (message) => {
+        const emoticon = cuteEmoticons[Math.floor(Math.random() * cuteEmoticons.length)];
+        const phrase = Math.random() < 0.4 ? ` ${cutePhrases[Math.floor(Math.random() * cutePhrases.length)]}` : '';
+        return `${emoticon} ${message}${Math.random() < 0.3 ? ` ${cutePhrases[Math.floor(Math.random() * cutePhrases.length)]}` : ''}`;
+    };
+
+    // Custom reply function to add cuteness to all responses
+    const cutifyReply = async (options) => {
+        if (typeof options === 'string') {
+            return interaction.reply(getRandomCute(options));
+        }
+        if (options.content) {
+            options.content = getRandomCute(options.content);
+        }
+        return interaction.reply(options);
+    };
+
     // /case command
     if (interaction.commandName === 'case') {
         const subcommand = interaction.options.getSubcommand();
@@ -533,7 +639,7 @@ client.on('interactionCreate', async interaction => {
             // Ensure gifs and gifs.cases are defined before iterating
             if (!gifs || !gifs.cases) {
                 console.error('GIFs data or cases are not loaded properly.');
-                return interaction.reply({ content: 'Error: Cases data is unavailable.', ephemeral: true });
+                return cutifyReply({ content: 'Cases data is unavailable.', ephemeral: true });
             }
 
             // Build an embed per case with item lists (grouped by rarity)
@@ -573,7 +679,7 @@ client.on('interactionCreate', async interaction => {
                 embeds.push(e);
             }
 
-            if (!embeds.length) return interaction.reply({ content: 'No cases available.', ephemeral: true });
+            if (!embeds.length) return cutifyReply({ content: 'No cases available.', ephemeral: true });
 
             // Create navigation buttons like /help and a Details button to show full lists
             const row = new ActionRowBuilder()
@@ -644,7 +750,7 @@ client.on('interactionCreate', async interaction => {
 
             if (!caseKey) {
                 console.warn('Case open failed: unknown case type provided:', rawType);
-                return interaction.reply({ content: `Invalid case type: ${rawType}. Use /case list to see available cases.`, ephemeral: true });
+                return interaction.reply({ content: `(｡•́︿•̀｡) nyaa~ invalid case type: ${rawType}. use /case list to see available cases uwu`, ephemeral: true });
             }
             const caseData = gifs.cases[caseKey];
             
@@ -655,7 +761,7 @@ client.on('interactionCreate', async interaction => {
             
             if (economy[interaction.guildId][userId].balance < caseData.cost) {
                 return interaction.reply({ 
-                    content: `You need ${caseData.cost} coins to open this case. Your balance: ${economy[interaction.guildId][userId].balance}`, 
+                    content: `(＞﹏＜) you need ${caseData.cost} coins to open this case. your balance: ${economy[interaction.guildId][userId].balance} uwu`, 
                     ephemeral: true 
                 });
             }
@@ -669,14 +775,14 @@ client.on('interactionCreate', async interaction => {
             
             // Create fancy embed for the result
             const embed = new EmbedBuilder()
-                .setTitle(`🎁 Case Opening Result - ${caseData.display}`)
+                .setTitle(`(｡♡‿♡｡) Case Opening Result - ${caseData.display}`)
                 .setColor(getRarityColor(item.rarity))
                 .setDescription(
-                    `You unboxed:\n\n` +
-                    `**${item.name}** (${item.wear})\n` +
-                    `Rarity: ${item.rarity}\n` +
-                    `Value: ${item.value} coins\n\n` +
-                    `New balance: ${economy[interaction.guildId][userId].balance} coins`
+                    `nyaa~ you unboxed:\n\n` +
+                    `**${item.name}** (${item.wear}) ✧˖°\n` +
+                    `Rarity: ${item.rarity} uwu\n` +
+                    `Value: ${item.value} coins :3\n\n` +
+                    `New balance: ${economy[interaction.guildId][userId].balance} coins (⑅˘꒳˘)♡`
                 );
 
             try {
@@ -704,7 +810,7 @@ client.on('interactionCreate', async interaction => {
         if (subcommand === 'inventory') {
             const userInv = inventory[interaction.guildId][interaction.user.id];
             if (!userInv || !userInv.length) {
-                return interaction.reply({ content: 'Your inventory is empty! Open some cases to get items.', ephemeral: true });
+                return interaction.reply({ content: 'owo your inventory is empty! open some cases to get items (｡•́︿•̀｡)', ephemeral: true });
             }
 
             // Sort by rarity (covert -> consumer)
@@ -712,7 +818,7 @@ client.on('interactionCreate', async interaction => {
             userInv.sort((a, b) => rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity));
 
             const embed = new EmbedBuilder()
-                .setTitle(`🎒 ${interaction.user.username}'s Inventory`)
+                .setTitle(`(◕‿◕✿) ${interaction.user.username}'s Inventory`)
                 .setColor('#FF69B4')
                 .setDescription(userInv.map(item => 
                     `• ${item.name} (${item.wear})\n  ${getRarityColor(item.rarity)}■${getRarityColor(item.rarity)} ${item.rarity} | Value: ${item.value} coins`
@@ -722,6 +828,50 @@ client.on('interactionCreate', async interaction => {
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
+        if (subcommand === 'stats') {
+            const userInv = inventory[interaction.guildId][interaction.user.id] || [];
+            
+            // Calculate statistics
+            const totalOpened = userInv.length;
+            const byRarity = {};
+            const byWear = {};
+            let totalValue = 0;
+            
+            // Sort items by value for best unboxings
+            const sortedByValue = [...userInv].sort((a, b) => b.value - a.value);
+            const bestItems = sortedByValue.slice(0, 3);
+            
+            // Calculate statistics
+            for (const item of userInv) {
+                byRarity[item.rarity] = (byRarity[item.rarity] || 0) + 1;
+                byWear[item.wear] = (byWear[item.wear] || 0) + 1;
+                totalValue += item.value;
+            }
+            
+            const embed = new EmbedBuilder()
+                .setTitle(`📊 Case Statistics for ${interaction.user.username}`)
+                .setColor('#FFD700')
+                .addFields(
+                    { name: '📦 Total Cases Opened', value: totalOpened.toString(), inline: true },
+                    { name: '💰 Total Inventory Value', value: `${totalValue} coins`, inline: true },
+                    { name: '🌟 Best Unboxings', value: bestItems.length ? 
+                        bestItems.map((item, i) => 
+                            `${i + 1}. ${item.name} (${item.wear}) - ${item.value} coins`
+                        ).join('\n') : 'No items yet', inline: false },
+                    { name: '📊 Rarity Breakdown', value: Object.entries(byRarity)
+                        .map(([rarity, count]) => 
+                            `${rarity}: ${count} (${Math.round(count/totalOpened*100)}%)`
+                        ).join('\n') || 'No items yet', inline: true },
+                    { name: '🔧 Wear Conditions', value: Object.entries(byWear)
+                        .map(([wear, count]) => 
+                            `${wear}: ${count} (${Math.round(count/totalOpened*100)}%)`
+                        ).join('\n') || 'No items yet', inline: true }
+                )
+                .setFooter({ text: 'Stats are updated in real-time as you open cases' });
+            
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+            
         if (subcommand === 'leaderboard') {
             const page = interaction.options.getInteger('page') || 1;
             const perPage = 10;
@@ -915,7 +1065,7 @@ client.on('interactionCreate', async interaction => {
             saveEconomy(economy);
             
             const embed = new EmbedBuilder()
-                .setTitle('💰 Item Sold')
+                .setTitle('(づ｡◕‿‿◕｡)づ Item Sold')
                 .setColor(getRarityColor(item.rarity))
                 .setDescription(
                     `Sold ${item.name} (${item.wear})\n` +
@@ -938,17 +1088,35 @@ client.on('interactionCreate', async interaction => {
         else if (percent > 40) comment = 'You have got some gay energy.';
         else if (percent > 20) comment = 'A little bit, maybe.';
 
+        // Cute emoticons and phrases for randomization
+        const cuteEmoticons = [
+            '(｡♡‿♡｡)', '(◕‿◕✿)', '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧', '(づ｡◕‿‿◕｡)づ',
+            '(ﾉ´ヮ`)ﾉ*: ･ﾟ', '(◠‿◠✿)', '╰(◡‿◡✿╰)', '(｡◕‿◕｡)'
+        ];
+        const cutePhrases = [
+            'uwu~', 'nya~', 'hehe~', '✧˖°', 'rawr~', 
+            '*nuzzles*', '*wiggles*', 'owo~', 'teehee~'
+        ];
+        const getRandomCute = () => {
+            const emoticon = cuteEmoticons[Math.floor(Math.random() * cuteEmoticons.length)];
+            const phrase = cutePhrases[Math.floor(Math.random() * cutePhrases.length)];
+            return `${emoticon} ${Math.random() < 0.5 ? phrase + ' ' : ''}`;
+        };
+
         const context = `${user.tag} is ${percent}% gay. ${comment}`;
-        // Optional OpenAI-flavored reply if function exists
+        // Optional AI-flavored reply
         if (typeof generateOpenAIReply === 'function' && Math.random() < 0.5) {
             try {
                 const ai = await generateOpenAIReply('gaytest', context);
                 if (ai) {
-                    return interaction.reply({ content: `${user} is ${percent}% gay. ${ai}`, allowedMentions: { users: [user.id] } });
+                    return cutifyReply({ 
+                        content: `${user} is ${percent}% gay~ ${ai}`, 
+                        allowedMentions: { users: [user.id] } 
+                    });
                 }
             } catch (e) {
-                // ignore AI errors and fall back to normal reply
-                console.error('OpenAI gaytest error:', e);
+                // ignore AI errors and fall back to normal reply with cute emoticon
+                console.error('(｡•́︿•̀｡) AI response error:', e);
             }
         }
 
@@ -1184,7 +1352,7 @@ client.on('interactionCreate', async interaction => {
         if (!economy[interaction.guildId]) economy[interaction.guildId] = {};
         if (!economy[interaction.guildId][userId]) economy[interaction.guildId][userId] = { balance: 100 };
         const bal = economy[interaction.guildId][userId].balance;
-        return interaction.reply({ content: `${interaction.user}, your balance is ${bal} coins.`, ephemeral: true });
+        return cutifyReply({ content: `${interaction.user}, your balance is ${bal} coins!`, ephemeral: true });
     }
 
     // /give command (admin only)
@@ -1681,7 +1849,7 @@ client.on('messageCreate', async function(message){
   console.log('Received message:', message.content, 'from', message.author.username, 'in channel', message.channel.id);
   if (message.author.bot) return;
 
-  const allowedChannels = ['1420238916190994555', '1421188776910393464'];
+  const allowedChannels = ['1420238916190994555', '1421188776910393464', '1420238577102618657'];
   if (!allowedChannels.includes(message.channel.id)) {
     console.log('Message not in allowed channels, ignoring.');
     return;
