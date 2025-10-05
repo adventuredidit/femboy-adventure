@@ -231,6 +231,13 @@ const commandDescriptions = [
     { name: '/case open', desc: 'Open a case for a chance at rare items.' },
     { name: '/case inventory', desc: 'View your collection of case items.' },
     { name: '/case sell', desc: 'Sell an item from your inventory for coins.' },
+
+    // Market System
+    { name: '/market list', desc: 'List an item for sale in the global market (use /case inventory to find item IDs).' },
+    { name: '/market buy', desc: 'Buy an item from the global market using its listing ID.' },
+    { name: '/market search', desc: 'Search market listings by name, rarity, or wear.' },
+    { name: '/market listings', desc: 'View your active market listings.' },
+    { name: '/market remove', desc: 'Remove your listing from the market and get the item back.' },
     
     // Fun & Games
     { name: '/dice', desc: 'Roll a 6-sided die.' },
@@ -2663,6 +2670,10 @@ client.on('interactionCreate', async interaction => {
             'Cases & Inventory': [
                 'case list', 'case open', 'case inventory', 'case stats',
                 'case sell', 'case leaderboard'
+            ],
+            'Market': [
+                'market list', 'market buy', 'market search',
+                'market listings', 'market remove'
             ],
             'Fun & Games': [
                 'dice', 'roll', 'guess', '8ball', 'coinflip', 'rps',
