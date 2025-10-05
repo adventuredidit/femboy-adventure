@@ -420,8 +420,29 @@ const MARKET_FILE = path.join(__dirname, 'data', 'market.json');
 const DAILY_FILE = path.join(__dirname, 'data', 'daily.json');
 
 function loadGifs() { try { if (!fs.existsSync(GIFS_FILE)) return {}; return JSON.parse(fs.readFileSync(GIFS_FILE, 'utf8') || '{}'); } catch (e) { console.error('Failed to load gifs:', e); return {}; } }
-function loadMarket() { try { if (!fs.existsSync(MARKET_FILE)) return {}; return JSON.parse(fs.readFileSync(MARKET_FILE, 'utf8') || '{}'); } catch (e) { console.error('Failed to load market:', e); return {}; } }
-function saveMarket(data) { try { fs.writeFileSync(MARKET_FILE, JSON.stringify(data, null, 2)); } catch (e) { console.error('Failed to save market:', e); } }
+function loadMarket() { 
+    try { 
+        if (!fs.existsSync(MARKET_FILE)) {
+            const initialMarket = { listings: [] };
+            fs.writeFileSync(MARKET_FILE, JSON.stringify(initialMarket, null, 2));
+            return initialMarket;
+        }
+        const market = JSON.parse(fs.readFileSync(MARKET_FILE, 'utf8') || '{"listings":[]}');
+        if (!market.listings) market.listings = [];
+        return market;
+    } catch (e) { 
+        console.error('Failed to load market:', e);
+        return { listings: [] };
+    } 
+}
+function saveMarket(data) { 
+    try { 
+        if (!data.listings) data.listings = [];
+        fs.writeFileSync(MARKET_FILE, JSON.stringify(data, null, 2)); 
+    } catch (e) { 
+        console.error('Failed to save market:', e); 
+    } 
+}
 function loadDaily() { try { if (!fs.existsSync(DAILY_FILE)) return {}; return JSON.parse(fs.readFileSync(DAILY_FILE, 'utf8') || '{}'); } catch (e) { console.error('Failed to load daily:', e); return {}; } }
 function saveDaily(data) { try { fs.writeFileSync(DAILY_FILE, JSON.stringify(data, null, 2)); } catch (e) { console.error('Failed to save daily:', e); } }
 
@@ -2938,8 +2959,9 @@ client.on('interactionCreate', async interaction => {
     } else if (commandName === 'market') {
         const subcommand = interaction.options.getSubcommand();
 
-        // Initialize global market data structure
-        if (!market.listings) market.listings = [];
+        // Ensure global market structure exists
+        if (!market || typeof market !== 'object') market = { listings: [] };
+        if (!Array.isArray(market.listings)) market.listings = [];
 
         if (subcommand === 'list') {
             const itemId = interaction.options.getString('item');
