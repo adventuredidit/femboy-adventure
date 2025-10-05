@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { generateReadableId } = require('./utils/id-generator');
+const { generateReadableId } = require('../utils/id-generator');
 
 // Load all data files
 const dataDir = path.join(__dirname, 'data');
