@@ -1,0 +1,11 @@
+{
+  "example_guild_id": {
+    "modLogChannelId": "123456789012345678",
+    "prefix": "/",
+    "features": {
+      "openaiReplies": true,
+      "economy": true,
+      "trivia": true
+    }
+  }
+}

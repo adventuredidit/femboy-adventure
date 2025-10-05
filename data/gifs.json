@@ -1,0 +1,285 @@
+{
+  "meme": [],
+  "wearSystem": {
+    "factoryNew": { "chance": 10, "valueMultiplier": 1, "display": "Factory New" },
+    "minimalWear": { "chance": 20, "valueMultiplier": 0.85, "display": "Minimal Wear" },
+    "fieldTested": { "chance": 35, "valueMultiplier": 0.6, "display": "Field-Tested" },
+    "wellWorn": { "chance": 20, "valueMultiplier": 0.4, "display": "Well-Worn" },
+    "battleScarred": { "chance": 15, "valueMultiplier": 0.25, "display": "Battle-Scarred" }
+  },
+  "cases": {
+    "csgo_standard": {
+      "cost": 50,
+      "display": "📦 CS:GO Standard Case",
+      "image": "data/gifs-cache/case-csgo-standard.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 10, "items": [
+          { "name": "P250 | Sand Dune", "gif": "data/gifs-cache/p250-sand-dune.png" },
+          { "name": "MAC-10 | Urban DDPAT", "gif": "data/gifs-cache/mac-10-urban-ddpat.png" },
+          { "name": "Tec-9 | Groundwater", "gif": "data/gifs-cache/tec9-groundwater.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 25, "items": [
+          { "name": "UMP-45 | Primal Saber", "gif": "data/gifs-cache/ump45-primal-saber.png" },
+          { "name": "MP7 | Special Delivery", "gif": "data/gifs-cache/mp7-special-delivery.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 60, "items": [
+          { "name": "M4A4 | Asiimov", "gif": "data/gifs-cache/m4a4-asiimov.png" },
+          { "name": "AK-47 | Redline", "gif": "data/gifs-cache/ak47-redline.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 250, "items": [
+          { "name": "Desert Eagle | Kumicho Dragon", "gif": "data/gifs-cache/de-kumicho-dragon.png" },
+          { "name": "Five-SeveN | Fowl Play", "gif": "data/gifs-cache/five7-fowl-play.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 800, "items": [
+          { "name": "AWP | Asiimov", "gif": "data/gifs-cache/awp-asiimov.png" },
+          { "name": "AK-47 | Vulcan", "gif": "data/gifs-cache/ak47-vulcan.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 4000, "items": [
+          { "name": "★ Karambit | Doppler", "gif": "data/gifs-cache/karambit-doppler.png" },
+          { "name": "★ M9 Bayonet | Marble Fade", "gif": "data/gifs-cache/m9-marble-fade.png" }
+        ]}
+      }
+    },
+    "operation_bravo": {
+      "cost": 200,
+      "display": "🎖️ Operation Bravo Case",
+      "image": "data/gifs-cache/case-operation-bravo.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 15, "items": [
+          { "name": "MP9 | Rose Iron", "gif": "data/gifs-cache/mp9-rose-iron.png" },
+          { "name": "P2000 | Pulse", "gif": "data/gifs-cache/p2000-pulse.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 40, "items": [
+          { "name": "Galil AR | Chatterbox", "gif": "data/gifs-cache/galil-chatterbox.png" },
+          { "name": "FAMAS | Afterimage", "gif": "data/gifs-cache/famas-afterimage.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 120, "items": [
+          { "name": "AUG | Aristocrat", "gif": "data/gifs-cache/aug-aristocrat.png" },
+          { "name": "M4A1-S | Decimator", "gif": "data/gifs-cache/m4a1s-decimator.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 600, "items": [
+          { "name": "AWP | Lightning Strike", "gif": "data/gifs-cache/awp-lightning-strike.png" },
+          { "name": "AK-47 | Hydroponic", "gif": "data/gifs-cache/ak47-hydroponic.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 1800, "items": [
+          { "name": "M4A4 | Howl", "gif": "data/gifs-cache/m4a4-howl.png" },
+          { "name": "AWP | Graphite", "gif": "data/gifs-cache/awp-graphite.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 6000, "items": [
+          { "name": "★ Butterfly Knife | Fade", "gif": "data/gifs-cache/butterfly-fade.png" },
+          { "name": "★ Bayonet | Doppler", "gif": "data/gifs-cache/bayonet-doppler.png" }
+        ]}
+      }
+    },
+    "gamma": {
+      "cost": 75,
+      "display": "🔮 Gamma Case",
+      "image": "data/gifs-cache/case-gamma.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 8, "items": [
+          { "name": "Five-SeveN | Violent Daimyo", "gif": "data/gifs-cache/five7-violent-daimyo.png" },
+          { "name": "Nova | Exo", "gif": "data/gifs-cache/nova-exo.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 20, "items": [
+          { "name": "Tec-9 | Ice Cap", "gif": "data/gifs-cache/tec9-ice-cap.png" },
+          { "name": "P250 | Iron Clad", "gif": "data/gifs-cache/p250-iron-clad.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 100, "items": [
+          { "name": "M4A4 | Evil Daimyo", "gif": "data/gifs-cache/m4a4-evil-daimyo.png" },
+          { "name": "AWP | Phobos", "gif": "data/gifs-cache/awp-phobos.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 300, "items": [
+          { "name": "Desert Eagle | Light Rail", "gif": "data/gifs-cache/de-light-rail.png" },
+          { "name": "R8 Revolver | Skull Crusher", "gif": "data/gifs-cache/r8-skull-crusher.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 900, "items": [
+          { "name": "AK-47 | Uncharted", "gif": "data/gifs-cache/ak47-uncharted.png" },
+          { "name": "M4A4 | Emperor", "gif": "data/gifs-cache/m4a4-emperor.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 4200, "items": [
+          { "name": "★ Navaja Knife | Damascus Steel", "gif": "data/gifs-cache/navaja-damascus.png" },
+          { "name": "★ Classic Knife | Fade", "gif": "data/gifs-cache/classic-fade.png" }
+        ]}
+      }
+    },
+    "prisma": {
+      "cost": 60,
+      "display": "✨ Prisma Case",
+      "image": "data/gifs-cache/case-prisma.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 9, "items": [
+          { "name": "MAC-10 | Whitefish", "gif": "data/gifs-cache/mac10-whitefish.png" },
+          { "name": "Tec-9 | Bamboozle", "gif": "data/gifs-cache/tec9-bamboozle.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 30, "items": [
+          { "name": "P250 | Verdigris", "gif": "data/gifs-cache/p250-verdigris.png" },
+          { "name": "MP7 | Mischief", "gif": "data/gifs-cache/mp7-mischief.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 140, "items": [
+          { "name": "Desert Eagle | Light Rail", "gif": "data/gifs-cache/de-light-rail.png" },
+          { "name": "UMP-45 | Moonrise", "gif": "data/gifs-cache/ump45-moonrise.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 350, "items": [
+          { "name": "AWP | Atheris", "gif": "data/gifs-cache/awp-atheris.png" },
+          { "name": "R8 Revolver | Skull Crusher", "gif": "data/gifs-cache/r8-skull-crusher.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 950, "items": [
+          { "name": "AK-47 | Uncharted", "gif": "data/gifs-cache/ak47-uncharted.png" },
+          { "name": "M4A4 | Emperor", "gif": "data/gifs-cache/m4a4-emperor.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 4300, "items": [
+          { "name": "★ Navaja Knife | Damascus Steel", "gif": "data/gifs-cache/navaja-damascus.png" },
+          { "name": "★ Classic Knife | Fade", "gif": "data/gifs-cache/classic-fade.png" }
+        ]}
+      }
+    },
+    "clutch": {
+      "cost": 75,
+      "display": "🎯 Clutch Case",
+      "image": "data/gifs-cache/case-clutch.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 6, "items": [
+          { "name": "MP9 | Black Sand", "gif": "data/gifs-cache/mp9-black-sand.png" },
+          { "name": "P2000 | Urban Hazard", "gif": "data/gifs-cache/p2000-urban-hazard.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 12, "items": [
+          { "name": "Glock-18 | Moonrise", "gif": "data/gifs-cache/glock-moonrise.png" },
+          { "name": "Nova | Wild Six", "gif": "data/gifs-cache/nova-wild-six.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 30, "items": [
+          { "name": "USP-S | Guardian", "gif": "data/gifs-cache/usp-s-guardian.png" },
+          { "name": "AK-47 | Red Laminate", "gif": "data/gifs-cache/ak47-red-laminate.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 120, "items": [
+          { "name": "AWP | Fever Dream", "gif": "data/gifs-cache/awp-fever-dream.png" },
+          { "name": "USP-S | Neo-Noir", "gif": "data/gifs-cache/usp-s-neo-noir.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 300, "items": [
+          { "name": "MP7 | Impire", "gif": "data/gifs-cache/mp7-impire.png" },
+          { "name": "Desert Eagle | Kumicho Dragon", "gif": "data/gifs-cache/desert-eagle-kumicho-dragon.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 1500, "items": [
+          { "name": "★ Karambit | Case Hardened", "gif": "data/gifs-cache/karambit-case-hardened.png" },
+          { "name": "★ Butterfly Knife | Fade", "gif": "data/gifs-cache/butterfly-knife-fade.png" }
+        ]}
+      }
+    },
+    "operation_phoenix": {
+      "cost": 45,
+      "display": "🔥 Operation Phoenix Case",
+      "image": "data/gifs-cache/case-operation-phoenix.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 4, "items": [
+          { "name": "Negev | Terrain", "gif": "data/gifs-cache/negev-terrain.png" },
+          { "name": "Desert Eagle | Oxide Blaze", "gif": "data/gifs-cache/de-oxide-blaze.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 20, "items": [
+          { "name": "Galil AR | Crimson Tsunami", "gif": "data/gifs-cache/galil-crimson-tsunami.png" },
+          { "name": "M4A1-S | Decimator", "gif": "data/gifs-cache/m4a1s-decimator.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 40, "items": [
+          { "name": "AWP | Fever Dream", "gif": "data/gifs-cache/awp-fever-dream.png" },
+          { "name": "USP-S | Neo-Noir", "gif": "data/gifs-cache/usp-s-neo-noir.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 80, "items": [
+          { "name": "XM1014 | Seasons", "gif": "data/gifs-cache/xm1014-seasons.png" },
+          { "name": "AK-47 | Bloodsport", "gif": "data/gifs-cache/ak47-bloodsport.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 150, "items": [
+          { "name": "★ Shadow Daggers | Ultraviolet", "gif": "data/gifs-cache/shadow-daggers-ultraviolet.png" },
+          { "name": "★ Karambit | Autotronic", "gif": "data/gifs-cache/karambit-autotronic.png" }
+        ]}
+      }
+    },
+    "shadow": {
+      "cost": 65,
+      "display": "🌑 Shadow Case",
+      "image": "data/gifs-cache/case-shadow.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 6, "items": [
+          { "name": "FAMAS | Survivor Z", "gif": "data/gifs-cache/famas-survivor-z.png" },
+          { "name": "Glock-18 | Wraiths", "gif": "data/gifs-cache/glock-wraiths.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 12, "items": [
+          { "name": "MAC-10 | Rangeen", "gif": "data/gifs-cache/mac10-rangeen.png" },
+          { "name": "SCAR-20 | Green Marine", "gif": "data/gifs-cache/scar20-green-marine.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 24, "items": [
+          { "name": "Dual Berettas | Dualing Dragons", "gif": "data/gifs-cache/dual-dueling-dragons.png" },
+          { "name": "M249 | Nebula Crusader", "gif": "data/gifs-cache/m249-nebula-crusader.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 48, "items": [
+          { "name": "MP7 | Special Delivery", "gif": "data/gifs-cache/mp7-special-delivery.png" },
+          { "name": "AK-47 | Frontside Misty", "gif": "data/gifs-cache/ak47-frontside-misty.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 60, "items": [
+          { "name": "AUG | Chameleon", "gif": "data/gifs-cache/aug-chameleon.png" },
+          { "name": "AK-47 | Neon Rider", "gif": "data/gifs-cache/ak47-neon-rider.png" }
+        ]},
+        "covert": { "chance": 0.5, "baseValue": 100, "items": [
+          { "name": "★ M9 Bayonet | Tiger Tooth", "gif": "data/gifs-cache/m9-tiger-tooth.png" }
+        ]}
+      }
+    },
+    "spectrum": {
+      "cost": 85,
+      "display": "🌈 Spectrum Case",
+      "image": "data/gifs-cache/case-spectrum.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 12, "items": [
+          { "name": "MP9 | Featherweight", "gif": "data/gifs-cache/mp9-featherweight.png" },
+          { "name": "P90 | Vent Rush", "gif": "data/gifs-cache/p90-vent-rush.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 30, "items": [
+          { "name": "FAMAS | Rapid Eye", "gif": "data/gifs-cache/famas-rapid-eye.png" },
+          { "name": "M4A1-S | Night Terror", "gif": "data/gifs-cache/m4a1s-night-terror.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 80, "items": [
+          { "name": "AWP | Duality", "gif": "data/gifs-cache/awp-duality.png" },
+          { "name": "AK-47 | Jaguar", "gif": "data/gifs-cache/ak47-jaguar.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 220, "items": [
+          { "name": "USP-S | Printstream", "gif": "data/gifs-cache/usp-s-printstream.png" },
+          { "name": "M4A1-S | Atomic Alloy", "gif": "data/gifs-cache/m4a1s-atomic-alloy.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 520, "items": [
+          { "name": "P90 | Asiimov", "gif": "data/gifs-cache/p90-asiimov.png" },
+          { "name": "AWP | Graphite", "gif": "data/gifs-cache/awp-graphite.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 2500, "items": [
+          { "name": "★ Huntsman Knife | Marble Fade", "gif": "data/gifs-cache/huntsman-marble-fade.png" }
+        ]}
+      }
+    },
+    "glove": {
+      "cost": 300,
+      "display": "🧤 Glove Case",
+      "image": "data/gifs-cache/case-glove.png",
+      "items": {
+        "consumer": { "chance": 50, "baseValue": 18, "items": [
+          { "name": "Glock-18 | Snack Attack", "gif": "data/gifs-cache/glock-snack-attack.png" },
+          { "name": "Five-SeveN | Scrawl", "gif": "data/gifs-cache/five7-scrawl.png" }
+        ]},
+        "industrial": { "chance": 25, "baseValue": 60, "items": [
+          { "name": "SCAR-20 | Poultrygeist", "gif": "data/gifs-cache/scar20-poultrygeist.png" },
+          { "name": "MAG-7 | Praetorian", "gif": "data/gifs-cache/mag7-praetorian.png" }
+        ]},
+        "mil-spec": { "chance": 15, "baseValue": 220, "items": [
+          { "name": "USP-S | Guardian", "gif": "data/gifs-cache/usp-s-guardian.png" },
+          { "name": "AK-47 | Red Laminate", "gif": "data/gifs-cache/ak47-red-laminate.png" }
+        ]},
+        "restricted": { "chance": 7, "baseValue": 900, "items": [
+          { "name": "AWP | Fever Dream", "gif": "data/gifs-cache/awp-fever-dream.png" },
+          { "name": "AK-47 | Bloodsport", "gif": "data/gifs-cache/ak47-bloodsport.png" }
+        ]},
+        "classified": { "chance": 2.5, "baseValue": 2400, "items": [
+          { "name": "★ Karambit | Autotronic", "gif": "data/gifs-cache/karambit-autotronic.png" },
+          { "name": "★ Shadow Daggers | Ultraviolet", "gif": "data/gifs-cache/shadow-daggers-ultraviolet.png" }
+        ]},
+        "covert": { "chance": 0.4, "baseValue": 8000, "items": [
+          { "name": "★ Karambit | Doppler", "gif": "data/gifs-cache/karambit-doppler.png" }
+        ]}
+      }
+    }
+  }
+}

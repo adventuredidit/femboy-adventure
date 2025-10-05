@@ -1,0 +1,24 @@
+{
+  "name": "femboy-adventure-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js & node index.js",
+    "validate-gifs": "node scripts/validate-gifs.js",
+    "download-gifs": "node scripts/download-gifs.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "discord.js": "^14.22.1",
+    "dotenv": "^17.2.2",
+    "minimist": "^1.2.8",
+    "node-fetch": "^2.7.0",
+    "openai": "^5.23.0",
+    "yt-search": "^2.13.1"
+  }
+}
