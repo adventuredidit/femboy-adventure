@@ -860,9 +860,31 @@ client.on('interactionCreate', async interaction => {
                 return interaction.reply({ content: 'owo your inventory is empty! open some cases to get items (｡•́︿•̀｡)', ephemeral: true });
             }
 
+            // Add IDs to any items that don't have them
+            userInv.forEach(item => {
+                if (!item.id) {
+                    item.id = generateItemId();
+                }
+            });
+
             // Sort by rarity (covert -> consumer)
             const rarityOrder = ['covert', 'classified', 'restricted', 'mil-spec', 'industrial', 'consumer'];
-            userInv.sort((a, b) => rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity));
+            userInv.sort((a, b) => {
+                // First sort by rarity
+                const rarityA = a.rarity.toLowerCase();
+                const rarityB = b.rarity.toLowerCase();
+                const rarityDiff = rarityOrder.indexOf(rarityA) - rarityOrder.indexOf(rarityB);
+                if (rarityDiff !== 0) return rarityDiff;
+                
+                // If same rarity, sort by name
+                if (a.name !== b.name) return a.name.localeCompare(b.name);
+                
+                // If same name, sort by wear
+                if (a.wear !== b.wear) return a.wear.localeCompare(b.wear);
+                
+                // If everything else is the same, sort by ID to prevent merging
+                return (a.id || '').localeCompare(b.id || '');
+            });
 
             const embed = new EmbedBuilder()
                 .setTitle(`(◕‿◕✿) ${interaction.user.username}'s Inventory`)
