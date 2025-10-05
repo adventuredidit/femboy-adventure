@@ -2936,6 +2936,255 @@ client.on('interactionCreate', async interaction => {
         } catch (err) {
             await interaction.reply({ content: 'Failed to unmute user.', ephemeral: true });
         }
+    } else if (commandName === 'market') {
+        const subcommand = interaction.options.getSubcommand();
+
+        // Initialize global market data structure
+        if (!market.listings) market.listings = [];
+
+        if (subcommand === 'list') {
+            const itemId = interaction.options.getString('item');
+            const price = interaction.options.getInteger('price');
+            const userInv = inventory[interaction.guildId][interaction.user.id];
+            
+            if (!userInv) {
+                return interaction.reply({ 
+                    content: 'You have no items to sell!',
+                    ephemeral: true 
+                });
+            }
+
+            // Find item by ID
+            const itemIndex = userInv.findIndex(i => i.id === itemId);
+            if (itemIndex === -1) {
+                return interaction.reply({ 
+                    content: `Item ID "${itemId}" not found in your inventory. Use /case inventory to see your items.`,
+                    ephemeral: true 
+                });
+            }
+
+            const item = userInv[itemIndex];
+            const listingId = generateItemId();
+
+            // Add listing
+            market.listings.push({
+                id: listingId,
+                itemId: item.id,
+                item: {...item},
+                price,
+                sellerId: interaction.user.id,
+                sellerName: interaction.user.username,
+                sellerGuildId: interaction.guildId,
+                listed: new Date().toISOString(),
+                guildName: interaction.guild.name
+            });
+
+            // Remove item from inventory
+            userInv.splice(itemIndex, 1);
+            
+            // Save changes
+            saveMarket(market);
+            saveInventory(inventory);
+
+            return interaction.reply({
+                content: `Listed ${item.name} (${item.wear}) for ${price} coins! Listing ID: \`${listingId}\``,
+                ephemeral: true
+            });
+        }
+
+        if (subcommand === 'buy') {
+            const listingId = interaction.options.getString('id');
+            
+            if (!market.listings?.length) {
+                return interaction.reply({
+                    content: 'No listings available in the global market.',
+                    ephemeral: true
+                });
+            }
+
+            const listingIndex = market.listings.findIndex(l => l.id === listingId);
+            if (listingIndex === -1) {
+                return interaction.reply({
+                    content: `Listing "${listingId}" not found. Use /market search to see available listings.`,
+                    ephemeral: true
+                });
+            }
+
+            const listing = market.listings[listingIndex];
+
+            // Prevent buying your own listings
+            if (listing.sellerId === interaction.user.id) {
+                return interaction.reply({
+                    content: 'You cannot buy your own listing! Use /market remove to remove it instead.',
+                    ephemeral: true
+                });
+            }
+            
+            // Set up economy for seller's guild if needed
+            if (!economy[listing.sellerGuildId]) {
+                economy[listing.sellerGuildId] = {};
+            }
+            if (!economy[listing.sellerGuildId][listing.sellerId]) {
+                economy[listing.sellerGuildId][listing.sellerId] = { balance: 0 };
+            }
+
+            // Check if buyer has enough coins
+            // Set up economy for buyer
+            if (!economy[interaction.guildId][interaction.user.id]) {
+                economy[interaction.guildId][interaction.user.id] = { balance: 0 };
+            }
+
+            if (economy[interaction.guildId][interaction.user.id].balance < listing.price) {
+                return interaction.reply({
+                    content: `You don't have enough coins! The item costs ${listing.price} coins.`,
+                    ephemeral: true
+                });
+            }
+
+            // Transfer coins across servers
+            economy[interaction.guildId][interaction.user.id].balance -= listing.price;
+            economy[listing.sellerGuildId][listing.sellerId].balance += listing.price;
+
+            // Transfer item
+            if (!inventory[interaction.guildId][interaction.user.id]) {
+                inventory[interaction.guildId][interaction.user.id] = [];
+            }
+            inventory[interaction.guildId][interaction.user.id].push({
+                ...listing.item,
+                id: generateItemId() // Generate new ID for the item
+            });
+
+            // Remove listing
+            market.listings.splice(listingIndex, 1);
+
+            // Save changes
+            saveMarket(market);
+            saveInventory(inventory);
+            saveEconomy(economy);
+
+            return interaction.reply({
+                content: `Successfully bought ${listing.item.name} (${listing.item.wear}) for ${listing.price} coins from ${listing.sellerName} (${listing.guildName})!`,
+                ephemeral: true
+            });
+        }
+
+        if (subcommand === 'search') {
+            const query = interaction.options.getString('query').toLowerCase();
+            
+            if (!market.listings?.length) {
+                return interaction.reply({
+                    content: 'No listings available in the global market.',
+                    ephemeral: true
+                });
+            }
+
+            const matches = market.listings.filter(l => 
+                l.item.name.toLowerCase().includes(query) ||
+                l.item.rarity.toLowerCase().includes(query) ||
+                l.item.wear.toLowerCase().includes(query)
+            );
+
+            if (!matches.length) {
+                return interaction.reply({
+                    content: `No listings found matching "${query}".`,
+                    ephemeral: true
+                });
+            }
+
+            const embed = new EmbedBuilder()
+                .setTitle('🏪 Global Market Search Results')
+                .setColor('#FF69B4')
+                .setDescription(matches.map(l =>
+                    `• ${l.item.name} (${l.item.wear})\n` +
+                    `  ${getRarityColor(l.item.rarity)}■${getRarityColor(l.item.rarity)} ${l.item.rarity}\n` +
+                    `  Price: ${l.price} coins\n` +
+                    `  Seller: ${l.sellerName}\n` +
+                    `  Server: ${l.guildName}\n` +
+                    `  ID: \`${l.id}\``
+                ).join('\n\n'))
+                .setFooter({ text: `Found ${matches.length} listings` });
+
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        if (subcommand === 'listings') {
+            if (!market.listings?.length) {
+                return interaction.reply({
+                    content: 'No listings available in the global market.',
+                    ephemeral: true
+                });
+            }
+
+            const userListings = market.listings.filter(l => 
+                l.sellerId === interaction.user.id
+            );
+
+            if (!userListings.length) {
+                return interaction.reply({
+                    content: 'You have no active listings.',
+                    ephemeral: true
+                });
+            }
+
+            const embed = new EmbedBuilder()
+                .setTitle('📋 Your Market Listings')
+                .setColor('#FF69B4')
+                .setDescription(userListings.map(l =>
+                    `• ${l.item.name} (${l.item.wear})\n` +
+                    `  ${getRarityColor(l.item.rarity)}■${getRarityColor(l.item.rarity)} ${l.item.rarity}\n` +
+                    `  Price: ${l.price} coins\n` +
+                    `  Listed: ${new Date(l.listed).toLocaleString()}\n` +
+                    `  ID: \`${l.id}\``
+                ).join('\n\n'))
+                .setFooter({ text: `${userListings.length} active listings` });
+
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        if (subcommand === 'remove') {
+            const listingId = interaction.options.getString('id');
+            
+            if (!market.listings?.length) {
+                return interaction.reply({
+                    content: 'No listings available in the global market.',
+                    ephemeral: true
+                });
+            }
+
+            const listingIndex = market.listings.findIndex(l => 
+                l.id === listingId && l.sellerId === interaction.user.id
+            );
+
+            if (listingIndex === -1) {
+                return interaction.reply({
+                    content: `Listing "${listingId}" not found or doesn't belong to you.`,
+                    ephemeral: true
+                });
+            }
+
+            const listing = market[interaction.guildId].listings[listingIndex];
+
+            // Return item to inventory
+            if (!inventory[interaction.guildId][interaction.user.id]) {
+                inventory[interaction.guildId][interaction.user.id] = [];
+            }
+            inventory[interaction.guildId][interaction.user.id].push({
+                ...listing.item,
+                id: generateItemId() // Generate new ID for returned item
+            });
+
+            // Remove listing
+            market.listings.splice(listingIndex, 1);
+
+            // Save changes
+            saveMarket(market);
+            saveInventory(inventory);
+
+            return interaction.reply({
+                content: `Removed listing for ${listing.item.name} (${listing.item.wear}) and returned item to your inventory.`,
+                ephemeral: true
+            });
+        }
     } else if (commandName === 'ban') {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers) && !isModerator(interaction.member)) return interaction.reply({ content: 'You do not have permission to ban members.', ephemeral: true });
         const user = interaction.options.getUser('user');
