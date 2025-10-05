@@ -34,6 +34,52 @@ const yts = require('yt-search');
 // Helper to build slash command definitions at runtime (so case choices reflect data/gifs.json)
 function buildCommands() {
     const cmds = [];
+    
+    // Roulette command
+    cmds.push(
+        new SlashCommandBuilder()
+            .setName('roulette')
+            .setDescription('Play roulette with your coins')
+            .addIntegerOption(option =>
+                option.setName('amount')
+                    .setDescription('Amount of coins to bet')
+                    .setRequired(true)
+                    .setMinValue(1)
+            )
+            .addStringOption(option =>
+                option.setName('bet_type')
+                    .setDescription('Type of bet to place')
+                    .setRequired(true)
+                    .addChoices(
+                        { name: 'Single Number (35x payout)', value: 'number' },
+                        { name: 'Red/Black (2x payout)', value: 'color' },
+                        { name: 'Even/Odd (2x payout)', value: 'parity' }
+                    )
+            )
+            .addIntegerOption(option =>
+                option.setName('number')
+                    .setDescription('Number to bet on (0-36, only for single number bets)')
+                    .setMinValue(0)
+                    .setMaxValue(36)
+            )
+            .addStringOption(option =>
+                option.setName('color')
+                    .setDescription('Color to bet on (for color bets)')
+                    .addChoices(
+                        { name: 'Red', value: 'red' },
+                        { name: 'Black', value: 'black' }
+                    )
+            )
+            .addStringOption(option =>
+                option.setName('parity')
+                    .setDescription('Even or Odd (for parity bets)')
+                    .addChoices(
+                        { name: 'Even', value: 'even' },
+                        { name: 'Odd', value: 'odd' }
+                    )
+            )
+    );
+
     const caseCommand = new SlashCommandBuilder()
         .setName('case')
         .setDescription('CS:GO-style case system')
@@ -1131,18 +1177,94 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply(owo);
     }
 
-    // /hug command
-    if (interaction.commandName === 'hug') {
+    // Reaction commands
+    const handleReactionCommand = async (interaction, type, customText) => {
         const user = interaction.options.getUser('user');
-        const list = (gifs.hug && gifs.hug.length) ? gifs.hug : [];
+        const list = (gifs[type] && gifs[type].length) ? gifs[type] : [];
         const pick = list.length ? list[Math.floor(Math.random() * list.length)] : null;
-        const text = `${interaction.user} hugs ${user}`;
+        const text = customText(interaction.user, user);
+        
         if (pick) {
             const ok = await isImageReachable(pick);
-            if (ok) return interaction.reply({ content: text, allowedMentions: { users: [interaction.user.id, user.id] }, files: [pick] });
-            return interaction.reply({ content: `${text} (image unavailable)`, allowedMentions: { users: [interaction.user.id, user.id] } });
+            if (ok) {
+                return interaction.reply({ 
+                    content: text, 
+                    files: [pick],
+                    allowedMentions: { users: [interaction.user.id, user.id] }
+                });
+            }
+            return interaction.reply({ 
+                content: `${text} (image unavailable)`,
+                allowedMentions: { users: [interaction.user.id, user.id] }
+            });
         }
-        return interaction.reply({ content: text, allowedMentions: { users: [interaction.user.id, user.id] } });
+        return interaction.reply({ 
+            content: text,
+            allowedMentions: { users: [interaction.user.id, user.id] }
+        });
+    };
+
+    // /hug command
+    if (interaction.commandName === 'hug') {
+        await handleReactionCommand(
+            interaction,
+            'hug',
+            (sender, target) => `${sender} hugs ${target}`
+        );
+    }
+
+    // /pat command
+    if (interaction.commandName === 'pat') {
+        await handleReactionCommand(
+            interaction,
+            'pat',
+            (sender, target) => `${sender} pats ${target}`
+        );
+    }
+
+    // /kiss command
+    if (interaction.commandName === 'kiss') {
+        await handleReactionCommand(
+            interaction,
+            'kiss',
+            (sender, target) => `${sender} kisses ${target}`
+        );
+    }
+
+    // /cuddle command
+    if (interaction.commandName === 'cuddle') {
+        await handleReactionCommand(
+            interaction,
+            'cuddle',
+            (sender, target) => `${sender} cuddles with ${target}`
+        );
+    }
+
+    // /poke command
+    if (interaction.commandName === 'poke') {
+        await handleReactionCommand(
+            interaction,
+            'poke',
+            (sender, target) => `${sender} pokes ${target}`
+        );
+    }
+
+    // /wave command
+    if (interaction.commandName === 'wave') {
+        await handleReactionCommand(
+            interaction,
+            'wave',
+            (sender, target) => `${sender} waves at ${target}`
+        );
+    }
+
+    // /highfive command
+    if (interaction.commandName === 'highfive') {
+        await handleReactionCommand(
+            interaction,
+            'highfive',
+            (sender, target) => `${sender} high-fives ${target}`
+        );
     }
 
     // /slap command
@@ -1305,6 +1427,93 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply(`🎲 You rolled a **${roll}**!`);
     }
 
+    // /roulette command - casino game
+    if (interaction.commandName === 'roulette') {
+        const amount = interaction.options.getInteger('amount');
+        const betType = interaction.options.getString('bet_type');
+        const number = interaction.options.getInteger('number');
+        const color = interaction.options.getString('color');
+        const parity = interaction.options.getString('parity');
+
+        // Validate user has enough coins
+        const userId = interaction.user.id;
+        if (!economy[interaction.guildId]) economy[interaction.guildId] = {};
+        if (!economy[interaction.guildId][userId]) economy[interaction.guildId][userId] = { balance: 100 };
+        const userAccount = economy[interaction.guildId][userId];
+
+        if (userAccount.balance < amount) {
+            return interaction.reply({ content: `Insufficient funds. You have ${userAccount.balance} coins.`, ephemeral: true });
+        }
+
+        // Validate bet parameters
+        if (betType === 'number' && number === null) {
+            return interaction.reply({ content: 'You must specify a number for number bets.', ephemeral: true });
+        }
+        if (betType === 'color' && !color) {
+            return interaction.reply({ content: 'You must specify red or black for color bets.', ephemeral: true });
+        }
+        if (betType === 'parity' && !parity) {
+            return interaction.reply({ content: 'You must specify even or odd for parity bets.', ephemeral: true });
+        }
+
+        // Define roulette wheel
+        const wheel = {
+            numbers: [...Array(37).keys()], // 0-36
+            colors: {
+                red: [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36],
+                black: [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
+            }
+        };
+
+        // Spin the wheel
+        const result = Math.floor(Math.random() * 37);
+        const resultColor = wheel.colors.red.includes(result) ? 'red' : wheel.colors.black.includes(result) ? 'black' : 'green';
+        const resultParity = result === 0 ? 'zero' : result % 2 === 0 ? 'even' : 'odd';
+
+        // Check if bet won
+        let won = false;
+        let payout = 0;
+        if (betType === 'number' && number === result) {
+            won = true;
+            payout = amount * 35; // 35:1 payout for number bets
+        } else if (betType === 'color' && color === resultColor) {
+            won = true;
+            payout = amount * 2; // 2:1 payout for color bets
+        } else if (betType === 'parity' && parity === resultParity) {
+            won = true;
+            payout = amount * 2; // 2:1 payout for parity bets
+        }
+
+        // Update balance
+        if (won) {
+            userAccount.balance += payout - amount;
+        } else {
+            userAccount.balance -= amount;
+        }
+        saveEconomy(economy);
+
+        // Create result embed
+        const embed = new EmbedBuilder()
+            .setTitle('� Roulette Result')
+            .setColor(resultColor === 'red' ? '#FF0000' : resultColor === 'black' ? '#000000' : '#00FF00')
+            .setDescription(
+                `The ball landed on: **${result}** (${resultColor}, ${resultParity})\n\n` +
+                `Your bet: ${amount} coins on ${betType === 'number' ? `number ${number}` : betType === 'color' ? color : parity}\n\n` +
+                (won ? `🎉 You won ${payout} coins!` : `❌ You lost ${amount} coins.`) +
+                `\n\nNew balance: ${userAccount.balance} coins`
+            );
+
+        // Add roulette wheel ASCII art
+        const wheelArt = 
+            "  ┌─────────────┐\n" +
+            `  │   ${result.toString().padStart(2, '0')}  ${resultColor[0].toUpperCase()}   │\n` +
+            "  └─────────────┘";
+        
+        embed.addFields({ name: 'Roulette Wheel', value: `\`\`\`\n${wheelArt}\n\`\`\``, inline: false });
+
+        return interaction.reply({ embeds: [embed] });
+    }
+
     // /guess command
     if (interaction.commandName === 'guess') {
         const userGuess = interaction.options.getInteger('number');
@@ -1316,34 +1525,913 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // /slots command
+    // /slots command - Enhanced slot machine with multiple paylines and special features
     if (interaction.commandName === 'slots') {
         // economy cost
         const userId = interaction.user.id;
-        const cost = 10; // cost to play
+        const cost = 10; // base cost to play
         if (!economy[interaction.guildId]) economy[interaction.guildId] = {};
         if (!economy[interaction.guildId][userId]) economy[interaction.guildId][userId] = { balance: 100 };
         const userAcct = economy[interaction.guildId][userId];
         const now = Date.now();
         if (lastPlayed[userId] && now - lastPlayed[userId] < 5000) return interaction.reply({ content: 'Please wait a few seconds between plays.', ephemeral: true });
         if (userAcct.balance < cost) return interaction.reply({ content: `You need ${cost} coins to play. Your balance: ${userAcct.balance}`, ephemeral: true });
+        
+        // Slot configuration
+        const slotItems = {
+            '7️⃣': { weight: 1, payout: 50 },    // Highest payout
+            '⭐': { weight: 2, payout: 25 },     // High payout
+            '🎰': { weight: 3, payout: 15 },     // Medium-high payout
+            '🍒': { weight: 4, payout: 10 },     // Medium payout
+            '🍊': { weight: 5, payout: 8 },      // Medium-low payout
+            '�': { weight: 6, payout: 5 },      // Low payout
+            '🍉': { weight: 7, payout: 3 }       // Lowest payout
+        };
+
+        // Generate weighted random item
+        const getRandomItem = () => {
+            const weights = Object.values(slotItems).map(item => item.weight);
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (const [symbol, data] of Object.entries(slotItems)) {
+                random -= data.weight;
+                if (random <= 0) return symbol;
+            }
+            return Object.keys(slotItems)[0];
+        };
+
+        // Generate 3x3 grid for multiple paylines
+        const grid = Array(3).fill().map(() => 
+            Array(3).fill().map(() => getRandomItem())
+        );
+
+        // Check paylines
+        const paylines = [
+            [[0,0], [0,1], [0,2]], // Top row
+            [[1,0], [1,1], [1,2]], // Middle row
+            [[2,0], [2,1], [2,2]], // Bottom row
+            [[0,0], [1,1], [2,2]], // Diagonal top-left to bottom-right
+            [[0,2], [1,1], [2,0]]  // Diagonal top-right to bottom-left
+        ];
+
+        let totalWin = 0;
+        const winningLines = [];
+
+        paylines.forEach((line, index) => {
+            const symbols = line.map(([row, col]) => grid[row][col]);
+            if (symbols.every(s => s === symbols[0])) {
+                const payout = slotItems[symbols[0]].payout * cost;
+                totalWin += payout;
+                winningLines.push(`Line ${index + 1}: ${symbols.join(' ')} = ${payout} coins`);
+            }
+        });
+
+        // Special feature: Random Multiplier (10% chance)
+        let multiplier = 1;
+        if (Math.random() < 0.1 && totalWin > 0) {
+            multiplier = [2, 2, 2, 3, 3, 5][Math.floor(Math.random() * 6)];
+            totalWin *= multiplier;
+        }
+
+        // Update balance
         userAcct.balance -= cost;
-        lastPlayed[userId] = now;
-        const items = ['🍒', '🍋', '🍊', '🍉', '⭐', '7️⃣'];
-        const slot1 = items[Math.floor(Math.random() * items.length)];
-        const slot2 = items[Math.floor(Math.random() * items.length)];
-        const slot3 = items[Math.floor(Math.random() * items.length)];
-        const win = (slot1 === slot2 && slot2 === slot3);
-        let reply = `🎰 | ${slot1} | ${slot2} | ${slot3} |`;
-        if (win) {
-            const payout = cost * 5;
-            userAcct.balance += payout;
-            reply += `\nYou win ${payout} coins! New balance: ${userAcct.balance}`;
-        } else {
-            reply += `\nYou lose! New balance: ${userAcct.balance}`;
+        if (totalWin > 0) {
+            userAcct.balance += totalWin;
         }
         saveEconomy(economy);
-        return interaction.reply(reply);
+
+        // Create fancy display
+        const display = grid.map(row => `║ ${row.join(' │ ')} ║`).join('\n');
+        const frameTop = '╔═══╤═══╤═══╗';
+        const frameBottom = '╚═══╧═══╧═══╝';
+        const frameDivider = '╟───┼───┼───╢';
+
+        const embed = new EmbedBuilder()
+            .setTitle('🎰 Slot Machine')
+            .setColor(totalWin > 0 ? '#FFD700' : '#808080')
+            .setDescription(
+                '```\n' +
+                frameTop + '\n' +
+                display.split('\n').join('\n' + frameDivider + '\n') + '\n' +
+                frameBottom + '\n```'
+            )
+            .addFields(
+                { name: 'Bet Amount', value: `${cost} coins`, inline: true },
+                { name: 'Outcome', value: totalWin > 0 ? '🎉 Winner!' : '❌ No win', inline: true },
+                { name: 'Balance', value: `${userAcct.balance} coins`, inline: true }
+            );
+
+        if (winningLines.length > 0) {
+            embed.addFields({
+                name: 'Winning Lines',
+                value: winningLines.join('\n')
+            });
+        }
+
+        if (multiplier > 1) {
+            embed.addFields({
+                name: '🌟 Lucky Multiplier!',
+                value: `All wins multiplied by ${multiplier}x!`
+            });
+        }
+
+        return interaction.reply({ embeds: [embed] });
+    }
+
+    // Trade command
+    if (interaction.commandName === 'trade') {
+        const target = interaction.options.getUser('user');
+        const guildId = interaction.guild.id;
+        const amount = interaction.options.getInteger('coins') || 0;
+        const itemId = interaction.options.getString('item');
+
+        // Can't trade with yourself
+        if (target.id === interaction.user.id) {
+            return interaction.reply({ content: 'You cannot trade with yourself!', ephemeral: true });
+        }
+
+        // Can't trade with bots
+        if (target.bot) {
+            return interaction.reply({ content: 'You cannot trade with bots!', ephemeral: true });
+        }
+
+        // Initialize economy data
+        if (!economy[guildId]) economy[guildId] = {};
+        if (!economy[guildId][interaction.user.id]) economy[guildId][interaction.user.id] = { balance: 100 };
+        if (!economy[guildId][target.id]) economy[guildId][target.id] = { balance: 100 };
+
+        const sender = economy[guildId][interaction.user.id];
+        const receiver = economy[guildId][target.id];
+
+        // Validate coin amount if trading coins
+        if (amount > 0) {
+            if (sender.balance < amount) {
+                return interaction.reply({ content: 'You don\'t have enough coins for this trade!', ephemeral: true });
+            }
+        }
+
+        // Validate item if trading item
+        let tradeItem = null;
+        if (itemId) {
+            // Load inventory data
+            if (!inventory[guildId]) inventory[guildId] = {};
+            if (!inventory[guildId][interaction.user.id]) inventory[guildId][interaction.user.id] = [];
+            
+            const userInv = inventory[guildId][interaction.user.id];
+            const itemIndex = userInv.findIndex(i => i.id === itemId);
+            
+            if (itemIndex === -1) {
+                return interaction.reply({ content: 'You don\'t have this item to trade!', ephemeral: true });
+            }
+            
+            tradeItem = userInv[itemIndex];
+        }
+
+        // Create trade offer embed
+        const embed = new EmbedBuilder()
+            .setTitle('🤝 Trade Offer')
+            .setColor('#00ff00')
+            .setDescription(`${interaction.user} wants to trade with ${target}!`)
+            .addFields(
+                { name: 'Offering', value: `${amount > 0 ? `${amount} coins` : ''}${amount > 0 && tradeItem ? ' and ' : ''}${tradeItem ? tradeItem.name : ''}`, inline: true }
+            );
+
+        // Create accept/decline buttons
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('trade_accept')
+                    .setLabel('Accept')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('trade_decline')
+                    .setLabel('Decline')
+                    .setStyle(ButtonStyle.Danger)
+            );
+
+        // Send trade offer
+        const response = await interaction.reply({
+            content: `${target}`,
+            embeds: [embed],
+            components: [row],
+            fetchReply: true
+        });
+
+        // Create collector for response
+        const collector = response.createMessageComponentCollector({
+            filter: i => i.user.id === target.id,
+            time: 60000, // 1 minute to respond
+            max: 1
+        });
+
+        collector.on('collect', async i => {
+            if (i.customId === 'trade_accept') {
+                // Double check balances and inventory
+                if (amount > 0 && sender.balance < amount) {
+                    return i.update({
+                        content: 'Trade failed: Sender no longer has enough coins!',
+                        components: []
+                    });
+                }
+
+                if (tradeItem) {
+                    const userInv = inventory[guildId][interaction.user.id];
+                    const itemIndex = userInv.findIndex(item => item.id === itemId);
+                    if (itemIndex === -1) {
+                        return i.update({
+                            content: 'Trade failed: Sender no longer has the item!',
+                            components: []
+                        });
+                    }
+                }
+
+                // Process trade
+                if (amount > 0) {
+                    sender.balance -= amount;
+                    receiver.balance += amount;
+                }
+
+                if (tradeItem) {
+                    // Remove item from sender
+                    const senderInv = inventory[guildId][interaction.user.id];
+                    const itemIndex = senderInv.findIndex(item => item.id === itemId);
+                    const [removedItem] = senderInv.splice(itemIndex, 1);
+
+                    // Add item to receiver
+                    if (!inventory[guildId][target.id]) inventory[guildId][target.id] = [];
+                    inventory[guildId][target.id].push(removedItem);
+                }
+
+                // Save changes
+                if (amount > 0) saveEconomy(economy);
+                if (tradeItem) saveInventory(inventory);
+
+                // Update message
+                const successEmbed = new EmbedBuilder()
+                    .setTitle('✅ Trade Complete!')
+                    .setColor('#00ff00')
+                    .setDescription('The trade was successful!')
+                    .addFields(
+                        { name: 'Traded', value: `${amount > 0 ? `${amount} coins` : ''}${amount > 0 && tradeItem ? ' and ' : ''}${tradeItem ? tradeItem.name : ''}`, inline: true }
+                    );
+
+                await i.update({
+                    embeds: [successEmbed],
+                    components: []
+                });
+            } else {
+                // Trade declined
+                const declineEmbed = new EmbedBuilder()
+                    .setTitle('❌ Trade Declined')
+                    .setColor('#ff0000')
+                    .setDescription(`${target} declined the trade offer.`);
+
+                await i.update({
+                    embeds: [declineEmbed],
+                    components: []
+                });
+            }
+        });
+
+        collector.on('end', collected => {
+            if (collected.size === 0) {
+                const timeoutEmbed = new EmbedBuilder()
+                    .setTitle('⏰ Trade Expired')
+                    .setColor('#ff0000')
+                    .setDescription('The trade offer has expired.');
+
+                interaction.editReply({
+                    embeds: [timeoutEmbed],
+                    components: []
+                });
+            }
+        });
+    }
+
+    // Rob command
+    if (interaction.commandName === 'rob') {
+        const target = interaction.options.getUser('user');
+        const guildId = interaction.guild.id;
+
+        // Cannot rob yourself
+        if (target.id === interaction.user.id) {
+            return interaction.reply({ content: 'You cannot rob yourself!', ephemeral: true });
+        }
+
+        // Cannot rob bots
+        if (target.bot) {
+            return interaction.reply({ content: 'You cannot rob bots!', ephemeral: true });
+        }
+
+        // Initialize economy data
+        if (!economy[guildId]) economy[guildId] = {};
+        if (!economy[guildId][interaction.user.id]) economy[guildId][interaction.user.id] = { balance: 100 };
+        if (!economy[guildId][target.id]) economy[guildId][target.id] = { balance: 100 };
+
+        const robber = economy[guildId][interaction.user.id];
+        const victim = economy[guildId][target.id];
+
+        // Check cooldown (1 hour)
+        const now = Date.now();
+        if (!robber.lastRob) robber.lastRob = 0;
+        const cooldown = 60 * 60 * 1000; // 1 hour
+        const timeLeft = cooldown - (now - robber.lastRob);
+
+        if (timeLeft > 0) {
+            const minutes = Math.ceil(timeLeft / (60 * 1000));
+            return interaction.reply({ 
+                content: `You need to wait ${minutes} minutes before attempting another robbery!`,
+                ephemeral: true 
+            });
+        }
+
+        // Minimum victim balance required (100 coins)
+        if (victim.balance < 100) {
+            return interaction.reply({ 
+                content: 'This user doesn\'t have enough coins to be worth robbing!',
+                ephemeral: true 
+            });
+        }
+
+        // Minimum robber balance required (50 coins as collateral)
+        if (robber.balance < 50) {
+            return interaction.reply({ 
+                content: 'You need at least 50 coins to attempt a robbery!',
+                ephemeral: true 
+            });
+        }
+
+        // Calculate success chance and potential rewards/penalties
+        let successChance = 0.3; // Base 30% chance
+
+        // Factors that affect success chance:
+        // 1. Victim's recent activity (if they've been active recently, harder to rob)
+        if (victim.lastActive && now - victim.lastActive < 24 * 60 * 60 * 1000) {
+            successChance -= 0.1; // -10% if victim was active in last 24h
+        }
+
+        // 2. Robber's experience (more successful robberies = higher chance)
+        if (!robber.successfulRobs) robber.successfulRobs = 0;
+        successChance += Math.min(0.2, robber.successfulRobs * 0.02); // +2% per successful rob, max +20%
+
+        // 3. Victim's defense items (if implemented in inventory system)
+        if (victim.hasDefenseItem) {
+            successChance -= 0.15; // -15% if victim has defense item
+        }
+
+        // Random event: Critical failure (5% chance)
+        const criticalFailure = Math.random() < 0.05;
+        
+        // Attempt robbery
+        const success = !criticalFailure && Math.random() < successChance;
+
+        if (success) {
+            // Calculate stolen amount (10-30% of victim's balance)
+            const maxSteal = Math.floor(victim.balance * 0.3);
+            const minSteal = Math.floor(victim.balance * 0.1);
+            const stolenAmount = Math.floor(Math.random() * (maxSteal - minSteal + 1)) + minSteal;
+
+            // Transfer coins
+            victim.balance -= stolenAmount;
+            robber.balance += stolenAmount;
+            robber.successfulRobs = (robber.successfulRobs || 0) + 1;
+
+            const embed = new EmbedBuilder()
+                .setTitle('🦹 Successful Heist!')
+                .setColor('#00ff00')
+                .setDescription(`You successfully robbed ${target.username}!`)
+                .addFields(
+                    { name: 'Stolen Amount', value: `${stolenAmount} coins`, inline: true },
+                    { name: 'New Balance', value: `${robber.balance} coins`, inline: true },
+                    { name: 'Success Rate', value: `${Math.floor(successChance * 100)}%`, inline: true }
+                );
+
+            // DM the victim
+            try {
+                const victimEmbed = new EmbedBuilder()
+                    .setTitle('😱 You\'ve Been Robbed!')
+                    .setColor('#ff0000')
+                    .setDescription(`${interaction.user.username} stole ${stolenAmount} coins from you!`)
+                    .addFields(
+                        { name: 'Remaining Balance', value: `${victim.balance} coins`, inline: true },
+                        { name: 'Tip', value: 'Buy defense items from the shop to reduce robbery success rates!', inline: false }
+                    );
+                await target.send({ embeds: [victimEmbed] });
+            } catch (err) {
+                // Ignore DM errors
+            }
+
+            interaction.reply({ embeds: [embed] });
+        } else {
+            // Failed robbery
+            let penalty = 50; // Base penalty
+            let failureMessage = 'Your robbery attempt failed!';
+
+            if (criticalFailure) {
+                penalty = 100; // Higher penalty for critical failure
+                failureMessage = 'CRITICAL FAILURE! You were caught red-handed!';
+            }
+
+            // Apply penalty
+            robber.balance -= penalty;
+
+            const embed = new EmbedBuilder()
+                .setTitle('💥 Failed Robbery!')
+                .setColor('#ff0000')
+                .setDescription(failureMessage)
+                .addFields(
+                    { name: 'Penalty', value: `${penalty} coins`, inline: true },
+                    { name: 'New Balance', value: `${robber.balance} coins`, inline: true },
+                    { name: 'Success Rate', value: `${Math.floor(successChance * 100)}%`, inline: true }
+                );
+
+            interaction.reply({ embeds: [embed] });
+        }
+
+        // Update cooldown
+        robber.lastRob = now;
+        saveEconomy(economy);
+    }
+
+    // Shop system commands
+    if (interaction.commandName === 'shop') {
+        const subcommand = interaction.options.getSubcommand();
+        const guildId = interaction.guild.id;
+
+        // Load shop data
+        let shopData = {};
+        try {
+            shopData = JSON.parse(fs.readFileSync('./data/shop.json', 'utf8'));
+        } catch (err) {
+            shopData = {};
+        }
+
+        if (!shopData[guildId]) shopData[guildId] = { items: [] };
+
+        if (subcommand === 'add') {
+            // Check if user has permission to add items
+            if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+                return interaction.reply({ content: 'You need the Manage Server permission to add shop items.', ephemeral: true });
+            }
+
+            const name = interaction.options.getString('name');
+            const price = interaction.options.getInteger('price');
+            const role = interaction.options.getRole('role');
+            const description = interaction.options.getString('description') || 'No description provided.';
+
+            // Validate input
+            if (price < 0) {
+                return interaction.reply({ content: 'Price must be positive.', ephemeral: true });
+            }
+
+            // Add item to shop
+            const item = {
+                id: Date.now().toString(),
+                name,
+                price,
+                roleId: role?.id,
+                description,
+                addedBy: interaction.user.id,
+                addedAt: Date.now()
+            };
+
+            shopData[guildId].items.push(item);
+            fs.writeFileSync('./data/shop.json', JSON.stringify(shopData, null, 2));
+
+            return interaction.reply(`Added "${name}" to the shop for ${price} coins.`);
+        }
+
+        if (subcommand === 'remove') {
+            // Check if user has permission to remove items
+            if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+                return interaction.reply({ content: 'You need the Manage Server permission to remove shop items.', ephemeral: true });
+            }
+
+            const itemId = interaction.options.getString('item');
+            const itemIndex = shopData[guildId].items.findIndex(item => item.id === itemId);
+
+            if (itemIndex === -1) {
+                return interaction.reply({ content: 'Item not found in the shop.', ephemeral: true });
+            }
+
+            const removedItem = shopData[guildId].items.splice(itemIndex, 1)[0];
+            fs.writeFileSync('./data/shop.json', JSON.stringify(shopData, null, 2));
+
+            return interaction.reply(`Removed "${removedItem.name}" from the shop.`);
+        }
+
+        if (subcommand === 'list') {
+            const items = shopData[guildId].items;
+            if (items.length === 0) {
+                return interaction.reply('The shop is currently empty.');
+            }
+
+            const itemsPerPage = 5;
+            const pages = Math.ceil(items.length / itemsPerPage);
+            const currentPage = interaction.options.getInteger('page') || 1;
+            
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = items.slice(start, end);
+
+            const embed = new EmbedBuilder()
+                .setTitle('🛍️ Server Shop')
+                .setColor('#00ff00')
+                .setDescription('Use `/buy item:<item_id>` to purchase items.');
+
+            pageItems.forEach(item => {
+                const role = item.roleId ? interaction.guild.roles.cache.get(item.roleId) : null;
+                embed.addFields({
+                    name: `${item.name} (${item.price} coins)`,
+                    value: `ID: ${item.id}\n${item.description}\n${role ? `Role: @${role.name}` : ''}`,
+                    inline: false
+                });
+            });
+
+            embed.setFooter({ text: `Page ${currentPage}/${pages}` });
+
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('shop_prev')
+                        .setLabel('Previous')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(currentPage === 1),
+                    new ButtonBuilder()
+                        .setCustomId('shop_next')
+                        .setLabel('Next')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(currentPage === pages)
+                );
+
+            const response = await interaction.reply({
+                embeds: [embed],
+                components: [row],
+                fetchReply: true
+            });
+
+            const collector = response.createMessageComponentCollector({
+                filter: i => i.user.id === interaction.user.id,
+                time: 300000
+            });
+
+            collector.on('collect', async i => {
+                const newPage = i.customId === 'shop_next' ? currentPage + 1 : currentPage - 1;
+                const newStart = (newPage - 1) * itemsPerPage;
+                const newEnd = newStart + itemsPerPage;
+                const newPageItems = items.slice(newStart, newEnd);
+
+                const newEmbed = EmbedBuilder.from(embed)
+                    .setFields([])
+                    .setFooter({ text: `Page ${newPage}/${pages}` });
+
+                newPageItems.forEach(item => {
+                    const role = item.roleId ? interaction.guild.roles.cache.get(item.roleId) : null;
+                    newEmbed.addFields({
+                        name: `${item.name} (${item.price} coins)`,
+                        value: `ID: ${item.id}\n${item.description}\n${role ? `Role: @${role.name}` : ''}`,
+                        inline: false
+                    });
+                });
+
+                const newRow = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('shop_prev')
+                            .setLabel('Previous')
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(newPage === 1),
+                        new ButtonBuilder()
+                            .setCustomId('shop_next')
+                            .setLabel('Next')
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(newPage === pages)
+                    );
+
+                await i.update({
+                    embeds: [newEmbed],
+                    components: [newRow]
+                });
+            });
+
+            collector.on('end', () => {
+                const disabledRow = ActionRowBuilder.from(row).setComponents(
+                    row.components.map(c => ButtonBuilder.from(c).setDisabled(true))
+                );
+                interaction.editReply({ components: [disabledRow] }).catch(console.error);
+            });
+        }
+    }
+
+    if (interaction.commandName === 'buy') {
+        const itemId = interaction.options.getString('item');
+        const guildId = interaction.guild.id;
+
+        // Load shop data
+        let shopData = {};
+        try {
+            shopData = JSON.parse(fs.readFileSync('./data/shop.json', 'utf8'));
+        } catch (err) {
+            return interaction.reply({ content: 'Shop system is currently unavailable.', ephemeral: true });
+        }
+
+        if (!shopData[guildId] || !shopData[guildId].items) {
+            return interaction.reply({ content: 'No items are available in the shop.', ephemeral: true });
+        }
+
+        const item = shopData[guildId].items.find(i => i.id === itemId);
+        if (!item) {
+            return interaction.reply({ content: 'Item not found in the shop.', ephemeral: true });
+        }
+
+        // Check if user has enough coins
+        if (!economy[guildId]) economy[guildId] = {};
+        if (!economy[guildId][interaction.user.id]) economy[guildId][interaction.user.id] = { balance: 100 };
+        const userAccount = economy[guildId][interaction.user.id];
+
+        if (userAccount.balance < item.price) {
+            return interaction.reply({ 
+                content: `You don't have enough coins. The item costs ${item.price} coins, but you only have ${userAccount.balance} coins.`,
+                ephemeral: true 
+            });
+        }
+
+        // Process purchase
+        try {
+            // If item grants a role
+            if (item.roleId) {
+                const role = interaction.guild.roles.cache.get(item.roleId);
+                if (!role) {
+                    return interaction.reply({ content: 'The role associated with this item no longer exists.', ephemeral: true });
+                }
+
+                // Check if bot has permission to assign the role
+                const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
+                if (!botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+                    return interaction.reply({ content: 'I don\'t have permission to assign roles.', ephemeral: true });
+                }
+
+                // Check if the bot's highest role is above the role to assign
+                if (botMember.roles.highest.position <= role.position) {
+                    return interaction.reply({ content: 'I can\'t assign a role that is higher than or equal to my highest role.', ephemeral: true });
+                }
+
+                // Assign the role
+                const member = await interaction.guild.members.fetch(interaction.user.id);
+                await member.roles.add(role);
+            }
+
+            // Deduct coins
+            userAccount.balance -= item.price;
+            saveEconomy(economy);
+
+            // Create purchase receipt
+            const embed = new EmbedBuilder()
+                .setTitle('🛍️ Purchase Successful')
+                .setColor('#00ff00')
+                .setDescription(`You bought ${item.name} for ${item.price} coins!`)
+                .addFields(
+                    { name: 'Remaining Balance', value: `${userAccount.balance} coins`, inline: true }
+                );
+
+            if (item.roleId) {
+                const role = interaction.guild.roles.cache.get(item.roleId);
+                if (role) {
+                    embed.addFields({ name: 'Role Granted', value: role.name, inline: true });
+                }
+            }
+
+            return interaction.reply({ embeds: [embed] });
+        } catch (error) {
+            console.error('Purchase error:', error);
+            return interaction.reply({ 
+                content: 'An error occurred while processing your purchase. Your coins have not been deducted.',
+                ephemeral: true 
+            });
+        }
+    }
+
+    // Basic utility commands
+    if (interaction.commandName === 'ping') {
+        const sent = await interaction.reply({ content: 'Pinging...', fetchReply: true });
+        const roundtrip = sent.createdTimestamp - interaction.createdTimestamp;
+        const wsHeartbeat = interaction.client.ws.ping;
+        const embed = new EmbedBuilder()
+            .setTitle('🏓 Pong!')
+            .setColor('#00ff00')
+            .addFields(
+                { name: 'Roundtrip', value: `${roundtrip}ms`, inline: true },
+                { name: 'Websocket', value: `${wsHeartbeat}ms`, inline: true }
+            );
+        await interaction.editReply({ content: null, embeds: [embed] });
+    }
+
+    if (interaction.commandName === 'avatar') {
+        const user = interaction.options.getUser('user') || interaction.user;
+        const embed = new EmbedBuilder()
+            .setTitle(`${user.username}'s Avatar`)
+            .setImage(user.displayAvatarURL({ dynamic: true, size: 4096 }))
+            .setColor('#ff69b4');
+        await interaction.reply({ embeds: [embed] });
+    }
+
+    if (interaction.commandName === 'userinfo') {
+        const user = interaction.options.getUser('user') || interaction.user;
+        const member = await interaction.guild.members.fetch(user.id);
+        const embed = new EmbedBuilder()
+            .setTitle('User Information')
+            .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+            .setColor('#ff69b4')
+            .addFields(
+                { name: 'Username', value: user.username, inline: true },
+                { name: 'Discriminator', value: user.discriminator, inline: true },
+                { name: 'ID', value: user.id, inline: true },
+                { name: 'Joined Server', value: member.joinedAt.toLocaleDateString(), inline: true },
+                { name: 'Account Created', value: user.createdAt.toLocaleDateString(), inline: true },
+                { name: 'Roles', value: member.roles.cache.map(r => r.name).join(', ') || 'None' }
+            );
+        await interaction.reply({ embeds: [embed] });
+    }
+
+    if (interaction.commandName === 'serverinfo') {
+        const guild = interaction.guild;
+        const totalMembers = guild.memberCount;
+        const embed = new EmbedBuilder()
+            .setTitle('Server Information')
+            .setThumbnail(guild.iconURL({ dynamic: true }))
+            .setColor('#ff69b4')
+            .addFields(
+                { name: 'Server Name', value: guild.name, inline: true },
+                { name: 'Server ID', value: guild.id, inline: true },
+                { name: 'Owner', value: `<@${guild.ownerId}>`, inline: true },
+                { name: 'Members', value: totalMembers.toString(), inline: true },
+                { name: 'Created On', value: guild.createdAt.toLocaleDateString(), inline: true },
+                { name: 'Boost Level', value: `Level ${guild.premiumTier}`, inline: true },
+                { name: 'Boost Count', value: `${guild.premiumSubscriptionCount || 0} boosts`, inline: true }
+            );
+        await interaction.reply({ embeds: [embed] });
+    }
+
+    // /work command
+    if (interaction.commandName === 'work') {
+        const userId = interaction.user.id;
+        const guildId = interaction.guild.id;
+
+        // Initialize economy and work tracking
+        if (!economy[guildId]) economy[guildId] = {};
+        if (!economy[guildId][userId]) {
+            economy[guildId][userId] = { 
+                balance: 100, 
+                lastWork: 0,
+                workExperience: 0 // Track total work sessions
+            };
+        }
+        const userAccount = economy[guildId][userId];
+
+        // Check cooldown (30 minutes)
+        const now = Date.now();
+        const lastWork = userAccount.lastWork || 0;
+        const cooldown = 30 * 60 * 1000; // 30 minutes
+        const timeLeft = cooldown - (now - lastWork);
+
+        if (timeLeft > 0) {
+            const minutes = Math.ceil(timeLeft / (60 * 1000));
+            return interaction.reply({ 
+                content: `You need to rest! Try working again in ${minutes} minutes.`,
+                ephemeral: true 
+            });
+        }
+
+        // Define jobs with varying difficulty and rewards
+        const jobs = [
+            { name: 'Delivery Driver', reward: [50, 100], difficulty: 'easy' },
+            { name: 'Office Assistant', reward: [70, 120], difficulty: 'easy' },
+            { name: 'Street Performer', reward: [60, 150], difficulty: 'medium' },
+            { name: 'Freelance Artist', reward: [80, 200], difficulty: 'medium' },
+            { name: 'Stock Trader', reward: [0, 300], difficulty: 'hard' },
+            { name: 'Crypto Miner', reward: [-100, 400], difficulty: 'hard' }
+        ];
+
+        // Select random job
+        const job = jobs[Math.floor(Math.random() * jobs.length)];
+        
+        // Calculate reward based on job difficulty and user's experience
+        const experienceBonus = Math.floor(userAccount.workExperience / 10) * 5; // +5 coins per 10 work sessions
+        const baseReward = Math.floor(
+            job.reward[0] + Math.random() * (job.reward[1] - job.reward[0])
+        );
+        const totalReward = baseReward + experienceBonus;
+
+        // Update user's account
+        userAccount.balance += totalReward;
+        userAccount.lastWork = now;
+        userAccount.workExperience = (userAccount.workExperience || 0) + 1;
+        saveEconomy(economy);
+
+        // Create response embed
+        const embed = new EmbedBuilder()
+            .setTitle('💼 Work Results')
+            .setColor(totalReward >= 0 ? '#00ff00' : '#ff0000')
+            .setDescription(`You worked as a ${job.name}!`)
+            .addFields(
+                { name: 'Base Earnings', value: `${baseReward} coins`, inline: true },
+                { name: 'Experience Bonus', value: `${experienceBonus} coins`, inline: true },
+                { name: 'Total Earned', value: `${totalReward} coins`, inline: true },
+                { name: 'New Balance', value: `${userAccount.balance} coins`, inline: true },
+                { name: 'Work Experience', value: `${userAccount.workExperience} shifts completed`, inline: true }
+            );
+
+        // Add flavor text based on the outcome
+        if (totalReward >= 200) {
+            embed.setFooter({ text: '📈 An exceptional day at work!' });
+        } else if (totalReward >= 100) {
+            embed.setFooter({ text: '👍 A good day\'s work!' });
+        } else if (totalReward >= 0) {
+            embed.setFooter({ text: '😊 Honest work for honest pay.' });
+        } else {
+            embed.setFooter({ text: '📉 Better luck next time!' });
+        }
+
+        return interaction.reply({ embeds: [embed] });
+    }
+
+    // /daily command
+    if (interaction.commandName === 'daily') {
+        const userId = interaction.user.id;
+        const guildId = interaction.guild.id;
+        
+        // Initialize economy and daily tracking
+        if (!economy[guildId]) economy[guildId] = {};
+        if (!economy[guildId][userId]) economy[guildId][userId] = { balance: 100, lastDaily: 0, dailyStreak: 0 };
+        const userAccount = economy[guildId][userId];
+
+        const now = Date.now();
+        const lastDaily = userAccount.lastDaily || 0;
+        const oneDay = 24 * 60 * 60 * 1000;
+        const timeSinceLastDaily = now - lastDaily;
+
+        // Check if enough time has passed
+        if (timeSinceLastDaily < oneDay) {
+            const timeLeft = oneDay - timeSinceLastDaily;
+            const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+            const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+            return interaction.reply({ 
+                content: `You've already claimed your daily reward! Try again in ${hours}h ${minutes}m`,
+                ephemeral: true 
+            });
+        }
+
+        // Calculate streak
+        if (timeSinceLastDaily <= 2 * oneDay) {
+            userAccount.dailyStreak = (userAccount.dailyStreak || 0) + 1;
+        } else {
+            userAccount.dailyStreak = 1;
+        }
+
+        // Calculate rewards
+        let baseReward = 100;
+        let streakBonus = Math.floor(baseReward * (userAccount.dailyStreak * 0.1)); // 10% bonus per streak day
+        let totalReward = baseReward + streakBonus;
+
+        // Apply special bonuses
+        if (userAccount.dailyStreak % 7 === 0) { // Weekly bonus
+            totalReward += 500;
+        }
+        if (userAccount.dailyStreak % 30 === 0) { // Monthly bonus
+            totalReward += 2000;
+        }
+
+        // Update user's balance and timestamp
+        userAccount.balance += totalReward;
+        userAccount.lastDaily = now;
+        saveEconomy(economy);
+
+        // Create response embed
+        const embed = new EmbedBuilder()
+            .setTitle('💰 Daily Reward')
+            .setColor('#FFD700')
+            .setDescription(`Here's your daily reward, ${interaction.user}!`)
+            .addFields(
+                { name: 'Base Reward', value: `${baseReward} coins`, inline: true },
+                { name: 'Streak', value: `${userAccount.dailyStreak} days`, inline: true },
+                { name: 'Streak Bonus', value: `${streakBonus} coins`, inline: true }
+            );
+
+        if (userAccount.dailyStreak % 7 === 0) {
+            embed.addFields({ name: '🎉 Weekly Bonus!', value: '500 coins', inline: true });
+        }
+        if (userAccount.dailyStreak % 30 === 0) {
+            embed.addFields({ name: '🎊 Monthly Bonus!', value: '2000 coins', inline: true });
+        }
+
+        embed.addFields({ 
+            name: 'Total Reward', 
+            value: `${totalReward} coins`, 
+            inline: false 
+        });
+
+        return interaction.reply({ embeds: [embed] });
     }
 
     // /balance command
@@ -1393,6 +2481,77 @@ client.on('interactionCreate', async interaction => {
         }
         saveEconomy(economy);
         return interaction.reply(resultText);
+    }
+
+    // /rps command
+    if (interaction.commandName === 'rps') {
+        const amount = interaction.options.getInteger('bet');
+        const choice = interaction.options.getString('choice').toLowerCase();
+        const opponent = interaction.options.getUser('opponent');
+
+        // Validate choices
+        if (!['rock', 'paper', 'scissors'].includes(choice)) {
+            return interaction.reply({ content: 'Choice must be rock, paper, or scissors.', ephemeral: true });
+        }
+
+        // Check if playing against bot or user
+        if (!opponent) {
+            // Playing against bot
+            if (amount) {
+                // Check economy for bets
+                if (!economy[interaction.guildId]) economy[interaction.guildId] = {};
+                if (!economy[interaction.guildId][interaction.user.id]) economy[interaction.guildId][interaction.user.id] = { balance: 100 };
+                const acct = economy[interaction.guildId][interaction.user.id];
+                
+                if (amount <= 0) return interaction.reply({ content: 'Bet must be positive.', ephemeral: true });
+                if (acct.balance < amount) return interaction.reply({ content: `Insufficient balance. You have ${acct.balance}`, ephemeral: true });
+            }
+
+            // Bot's choice
+            const choices = ['rock', 'paper', 'scissors'];
+            const botChoice = choices[Math.floor(Math.random() * choices.length)];
+
+            // Determine winner
+            let result;
+            if (choice === botChoice) result = 'tie';
+            else if (
+                (choice === 'rock' && botChoice === 'scissors') ||
+                (choice === 'paper' && botChoice === 'rock') ||
+                (choice === 'scissors' && botChoice === 'paper')
+            ) result = 'win';
+            else result = 'lose';
+
+            // Create response embed
+            const embed = new EmbedBuilder()
+                .setTitle('🎮 Rock Paper Scissors')
+                .setColor(result === 'win' ? '#00ff00' : result === 'lose' ? '#ff0000' : '#ffff00')
+                .addFields(
+                    { name: 'Your Choice', value: choice, inline: true },
+                    { name: 'Bot\'s Choice', value: botChoice, inline: true },
+                    { name: 'Result', value: result === 'win' ? 'You won!' : result === 'lose' ? 'You lost!' : 'It\'s a tie!', inline: true }
+                );
+
+            // Handle betting if enabled
+            if (amount) {
+                const acct = economy[interaction.guildId][interaction.user.id];
+                if (result === 'win') {
+                    const payout = Math.floor(amount * 1.5);
+                    acct.balance += payout;
+                    embed.addFields({ name: 'Payout', value: `You won ${payout} coins!\nNew balance: ${acct.balance}`, inline: false });
+                } else if (result === 'lose') {
+                    acct.balance -= amount;
+                    embed.addFields({ name: 'Loss', value: `You lost ${amount} coins.\nNew balance: ${acct.balance}`, inline: false });
+                } else {
+                    embed.addFields({ name: 'Tie', value: 'Bet returned', inline: false });
+                }
+                saveEconomy(economy);
+            }
+
+            return interaction.reply({ embeds: [embed] });
+        } else {
+            // Implement player vs player logic here if needed
+            return interaction.reply('Player vs Player RPS coming soon!');
+        }
     }
 
     // /playquery - search YouTube and return top result with metadata
@@ -1454,13 +2613,40 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'help') {
         // Group commands by category
         const categories = {
-            'Cases': ['case list', 'case open'],
-            'Fun & Games': ['dice', 'roll', 'guess', '8ball', 'coinflip', 'rps', 'gaytest', 'owoify'],
-            'Economy': ['slots', 'balance', 'bal', 'bet', 'give'],
-            'Trivia': ['trivia', 'trivia-leaderboard'],
-            'Reactions': ['hug', 'slap', 'ship', 'meme', 'cat', 'dog'],
-            'Music': ['playquery'],
-            'Moderation': ['mute', 'unmute', 'kick', 'ban', 'unban', 'warn', 'warns', 'clearwarns', 'timeout', 'purge', 'lock', 'unlock', 'setmodlog']
+            'Cases & Inventory': [
+                'case list', 'case open', 'case inventory', 'case stats',
+                'case sell', 'case leaderboard'
+            ],
+            'Fun & Games': [
+                'dice', 'roll', 'guess', '8ball', 'coinflip', 'rps',
+                'gaytest', 'owoify', 'roulette', 'slots', 'bet'
+            ],
+            'Economy & Trading': [
+                'balance', 'give', 'daily', 'work', 'rob', 'trade',
+                'shop', 'buy', 'sell', 'inventory', 'market'
+            ],
+            'Trivia & Games': [
+                'trivia', 'trivia-leaderboard', 'quiz', 'hangman',
+                'wordle', 'akinator', 'truth', 'dare'
+            ],
+            'Reactions & Social': [
+                'hug', 'slap', 'ship', 'meme', 'cat', 'dog',
+                'pat', 'kiss', 'cuddle', 'poke', 'wave', 'highfive'
+            ],
+            'Music & Audio': [
+                'playquery', 'play', 'skip', 'queue', 'nowplaying',
+                'pause', 'resume', 'stop', 'volume', 'playlist'
+            ],
+            'Moderation & Admin': [
+                'mute', 'unmute', 'kick', 'ban', 'unban', 'warn',
+                'warns', 'clearwarns', 'timeout', 'purge', 'lock',
+                'unlock', 'setmodlog', 'slowmode', 'raid-protect',
+                'automod', 'filter', 'nickname', 'role', 'welcome'
+            ],
+            'Utility & Info': [
+                'help', 'serverinfo', 'userinfo', 'avatar',
+                'ping', 'uptime', 'stats', 'permissions', 'reminders'
+            ]
         };
 
         // Create embeds for each category
@@ -1471,15 +2657,17 @@ client.on('interactionCreate', async interaction => {
             .setTitle('📖 Help Menu')
             .setDescription('Use the buttons below to navigate through command categories.\n\n' + 
                           'Categories:\n' +
+                          '📦 Cases & Inventory\n' +
                           '🎮 Fun & Games\n' +
-                          '💰 Economy\n' +
-                          '❓ Trivia\n' +
-                          '🎭 Reactions\n' +
-                          '🎵 Music\n' +
-                          '🛡️ Moderation\n\n' +
+                          '💰 Economy & Trading\n' +
+                          '❓ Trivia & Games\n' +
+                          '🎭 Reactions & Social\n' +
+                          '🎵 Music & Audio\n' +
+                          '🛡️ Moderation & Admin\n' +
+                          '🔧 Utility & Info\n\n' +
                           'Tip: All commands use slash (/) command format!')
             .setColor('#FF69B4')
-            .setFooter({ text: 'Page 1/7' });
+            .setFooter({ text: 'Page 1/9' });
         embeds.push(overviewEmbed);
 
         // Create an embed for each category
@@ -1496,6 +2684,24 @@ client.on('interactionCreate', async interaction => {
                     description += `**${cmd.name}**\n${cmd.desc}\n\n`;
                 }
             });
+            // Add usage examples and additional info for certain categories
+            if (category === 'Cases & Inventory') {
+                embed.addFields({
+                    name: 'Case Values',
+                    value: 'Common: 100-500 coins\nRare: 500-2000 coins\nLegendary: 2000+ coins'
+                });
+            } else if (category === 'Economy & Trading') {
+                embed.addFields({
+                    name: 'Daily Rewards',
+                    value: 'Daily: 100 coins\nWeekly bonus: 500 coins\nMonthly bonus: 2000 coins'
+                });
+            } else if (category === 'Music & Audio') {
+                embed.addFields({
+                    name: 'Supported Sources',
+                    value: 'YouTube, Spotify, SoundCloud'
+                });
+            }
+            
             embed.setDescription(description);
             embeds.push(embed);
         });
