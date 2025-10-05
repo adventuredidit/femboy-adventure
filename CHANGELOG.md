@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2025-10-05
+- Fixed /case sell command to use item IDs instead of names
+- Added proper market system implementation
+- Fixed command parameter descriptions
+
 ## [1.1.1] - 2025-10-05
 - Added item ID display in inventory
 - Updated inventory system with unique item identifiers
