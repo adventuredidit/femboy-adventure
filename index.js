@@ -28,7 +28,8 @@ const client = new Client({ intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildPresences  // Add this for better user fetching
 ]});
 const yts = require('yt-search');
 // Helper to build slash command definitions at runtime (so case choices reflect data/gifs.json)
@@ -177,6 +178,9 @@ function buildCommands() {
         .setName('streak')
         .setDescription('Check your daily reward streak');
     cmds.push(caseCommand);
+    cmds.push(dailyCommand);
+    cmds.push(streakCommand);
+    cmds.push(marketCommand);
     cmds.push(new SlashCommandBuilder().setName('dice').setDescription('Roll a 6-sided die!'));
     
     // Additional commands - non-duplicates
