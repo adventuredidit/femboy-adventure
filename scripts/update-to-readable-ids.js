@@ -4,8 +4,26 @@ const { generateReadableId } = require('../utils/id-generator');
 
 // Load all data files
 const dataDir = path.join(__dirname, '..', 'data');
-const inventory = JSON.parse(fs.readFileSync(path.join(dataDir, 'inventory.json'), 'utf8'));
-const market = JSON.parse(fs.readFileSync(path.join(dataDir, 'market.json'), 'utf8'));
+
+// Helper function to safely load JSON files
+function loadJsonFile(filename) {
+    const filepath = path.join(dataDir, filename);
+    if (!fs.existsSync(filepath)) {
+        console.log(`Creating new ${filename} file...`);
+        fs.writeFileSync(filepath, '{}');
+        return {};
+    }
+    try {
+        return JSON.parse(fs.readFileSync(filepath, 'utf8'));
+    } catch (err) {
+        console.error(`Error reading ${filename}:`, err);
+        process.exit(1);
+    }
+}
+
+console.log('Loading data files...');
+const inventory = loadJsonFile('inventory.json');
+const market = loadJsonFile('market.json');
 
 // Keep track of used IDs to avoid duplicates
 const usedIds = new Set();
