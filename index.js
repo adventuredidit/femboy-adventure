@@ -841,6 +841,7 @@ client.on('interactionCreate', async interaction => {
 
             // Add item to inventory
             inventory[interaction.guildId][interaction.user.id].push({
+                id: item.id, // Save the generated ID
                 name: item.name,
                 rarity: item.rarity,
                 wear: item.wear,
@@ -867,7 +868,7 @@ client.on('interactionCreate', async interaction => {
                 .setTitle(`(◕‿◕✿) ${interaction.user.username}'s Inventory`)
                 .setColor('#FF69B4')
                 .setDescription(userInv.map(item => 
-                    `• ${item.name} (${item.wear})\n  ${getRarityColor(item.rarity)}■${getRarityColor(item.rarity)} ${item.rarity} | Value: ${item.value} coins`
+                    `• ${item.name} (${item.wear})\n  ${getRarityColor(item.rarity)}■${getRarityColor(item.rarity)} ${item.rarity} | Value: ${item.value} coins\n  ID: \`${item.id || 'Not available'}\``
                 ).join('\n\n'))
                 .setFooter({ text: `Total items: ${userInv.length}` });
 
