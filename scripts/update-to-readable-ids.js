@@ -3,7 +3,7 @@ const path = require('path');
 const { generateReadableId } = require('../utils/id-generator');
 
 // Load all data files
-const dataDir = path.join(__dirname, 'data');
+const dataDir = path.join(__dirname, '..', 'data');
 const inventory = JSON.parse(fs.readFileSync(path.join(dataDir, 'inventory.json'), 'utf8'));
 const market = JSON.parse(fs.readFileSync(path.join(dataDir, 'market.json'), 'utf8'));
 
